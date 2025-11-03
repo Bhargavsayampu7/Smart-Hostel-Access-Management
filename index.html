@@ -1,0 +1,714 @@
+<html data-color-scheme="light"></html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Hostel Access Control System</title>
+    <link rel="stylesheet" href="style.css?v=1">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="login-page hidden">
+        <div class="container">
+            <div class="login-container">
+                <h1>Smart Hostel Access Control</h1>
+                <p>Please login to continue</p>
+                <form id="loginForm" class="login-form">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="loginEmail" required placeholder="your.email@college.edu">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" id="loginPassword" required placeholder="Enter your password">
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--lg btn--full-width">Login</button>
+                    <div id="loginError" class="error-message hidden"></div>
+                </form>
+                <div class="login-info">
+                    <p><strong>Demo Credentials:</strong></p>
+                    <p>Student: bhargav.teja@college.edu / password123</p>
+                    <p>Parent: ravi@gmail.com / password123</p>
+                    <p>Admin: venkat.rao@college.edu / password123</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Landing Page -->
+    <div id="landingPage" class="landing-page">
+        <div class="container">
+            <div class="landing-header">
+                <h1>Smart Hostel Access Control</h1>
+                <p>Violation-based risk assessment with comprehensive parent verification</p>
+            </div>
+            <div class="role-grid">
+                <button class="role-card" data-role="student">
+                    <div class="role-icon">👨‍🎓</div>
+                    <h3>Student Portal</h3>
+                    <p>Bhargav - Manage profile and create requests</p>
+                </button>
+                <button class="role-card" data-role="parent">
+                    <div class="role-icon">👨‍👩‍👧‍👦</div>
+                    <h3>Parent Portal</h3>
+                    <p>Ravi - Review and approve requests</p>
+                </button>
+                <button class="role-card" data-role="admin">
+                    <div class="role-icon">👩‍💼</div>
+                    <h3>Admin Dashboard</h3>
+                    <p>Venkat Rao - Final approval with verification</p>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="main-app hidden">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <button id="backToRoles" class="btn-icon">←</button>
+                <div class="header-info">
+                    <h2 id="headerTitle">Dashboard</h2>
+                    <p id="headerSubtitle" class="header-subtitle"></p>
+                </div>
+                <div class="header-actions">
+                    <button id="emergencyBtn" class="btn-icon emergency-btn hidden" title="Emergency Request">
+                        🚨
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs" id="navigationTabs">
+            <!-- Dynamic content based on role -->
+        </nav>
+
+        <!-- Content Area -->
+        <main class="content-area">
+            <!-- Student Dashboard -->
+            <div id="studentDashboard" class="dashboard hidden">
+                <div class="tab-content">
+                    <!-- Dashboard Overview -->
+                    <div id="studentOverview" class="tab-pane active">
+                        <div class="welcome-section">
+                            <h3 id="studentWelcome">Welcome back!</h3>
+                            <p id="studentInfo">Track your outpass requests and manage your profile</p>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-value" id="studentTotalRequests">--</div>
+                                <div class="stat-label">Total Requests</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="studentActiveRequests">--</div>
+                                <div class="stat-label">Active Requests</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="studentViolations">--</div>
+                                <div class="stat-label">Violations</div>
+                            </div>
+                            <div class="stat-card risk-score-card">
+                                <div class="stat-value" id="studentRiskScore">--</div>
+                                <div class="stat-label">Risk Score</div>
+                            </div>
+                        </div>
+                        <div class="quick-actions">
+                            <button class="btn btn--primary btn--lg" id="quickCreateBtn">+ Quick Request</button>
+                            <button class="btn btn--outline" id="viewQRBtn">View Active QR</button>
+                        </div>
+                        <div class="recent-requests">
+                            <h4>Recent Activity</h4>
+                            <div id="recentRequestsList" class="request-cards">
+                                <!-- Dynamic content -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- My Requests Tab -->
+                    <div id="studentRequests" class="tab-pane">
+                        <div class="action-header">
+                            <h3>My Outpass Requests</h3>
+                            <div class="filter-controls">
+                                <select class="form-control" id="statusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="pending_parent">Pending Parent</option>
+                                    <option value="parent_approved">Parent Approved</option>
+                                    <option value="approved">Final Approved</option>
+                                    <option value="parent_rejected">Parent Rejected</option>
+                                    <option value="rejected">Rejected</option>
+                                </select>
+                                <button class="btn btn--primary" id="createRequestBtn">+ New Request</button>
+                            </div>
+                        </div>
+                        <div class="request-cards" id="studentRequestList">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+
+                    <!-- Create Request Tab -->
+                    <div id="createRequest" class="tab-pane">
+                        <div class="form-container">
+                            <h3>Create New Outpass Request</h3>
+                            <form class="request-form" id="newRequestForm">
+                                <div class="form-step active" id="step1">
+                                    <h4>Step 1: Select Outpass Type</h4>
+                                    <div class="outpass-type-cards">
+                                        <div class="outpass-type-card" data-type="outpass">
+                                            <div class="type-icon outpass-icon">🚶‍♂️</div>
+                                            <h5>Regular Outpass</h5>
+                                            <p>Day outing within city limits</p>
+                                            <span class="duration-label">Max: 12 hours</span>
+                                        </div>
+                                        <div class="outpass-type-card" data-type="homepass">
+                                            <div class="type-icon homepass-icon">🏠</div>
+                                            <h5>Home Pass</h5>
+                                            <p>Visit home or family for multiple days</p>
+                                            <span class="duration-label">Max: 7 days</span>
+                                        </div>
+                                        <div class="outpass-type-card" data-type="emergency">
+                                            <div class="type-icon emergency-icon">🚨</div>
+                                            <h5>Emergency Pass</h5>
+                                            <p>Urgent situations requiring immediate departure</p>
+                                            <span class="duration-label">Max: 24 hours</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-step" id="step2">
+                                    <h4>Step 2: Request Details</h4>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Destination</label>
+                                            <select class="form-control" id="destination" required>
+                                                <option value="">Select destination</option>
+                                                <option value="Home Town">Home Town</option>
+                                                <option value="Nexus Mall">Nexus Mall</option>
+                                                <option value="Tank Bund">Tank Bund</option>
+                                                <option value="Movie">Movie</option>
+                                                <option value="Hospital">Hospital</option>
+                                                <option value="Railway Station">Railway Station</option>
+                                                <option value="Airport">Airport</option>
+                                                <option value="Friend's Place">Friend's Place</option>
+                                                <option value="Other">Other (Specify in reason)</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Emergency Contact</label>
+                                            <input type="tel" class="form-control" id="emergencyContact" placeholder="Parent/Guardian number" value="+91-9876543200" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Reason for Request</label>
+                                        <textarea class="form-control" id="reason" rows="3" required placeholder="Please provide a detailed reason for your request"></textarea>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Departure Date & Time</label>
+                                            <input type="datetime-local" class="form-control" id="departureTime" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Return Date & Time</label>
+                                            <input type="datetime-local" class="form-control" id="returnTime" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-step" id="step3">
+                                    <h4>Step 3: Review & Submit</h4>
+                                    <div class="request-review">
+                                        <div class="review-card">
+                                            <h5>Request Summary</h5>
+                                            <div id="reviewSummary">
+                                                <!-- Dynamic content -->
+                                            </div>
+                                            <div class="risk-info">
+                                                <div class="current-risk">
+                                                    <strong>Your Risk Score: </strong>
+                                                    <span class="risk-score-badge" id="currentRiskScore">35</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-navigation">
+                                    <button type="button" class="btn btn--outline" id="prevStep" style="display: none;">Previous</button>
+                                    <button type="button" class="btn btn--primary" id="nextStep">Next</button>
+                                    <button type="submit" class="btn btn--primary" id="submitRequest" style="display: none;">Submit Request</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- QR Code Tab -->
+                    <div id="qrCode" class="tab-pane">
+                        <div class="qr-container" id="qrContainer">
+                            <h3>Your Active Pass</h3>
+                            <div id="activePassDisplay" class="qr-display">
+                                <!-- Dynamic QR content -->
+                            </div>
+                            <div id="noActivePass" class="empty-state hidden">
+                                <p>No active outpass. Create a request to get your QR code.</p>
+                                <button class="btn btn--primary" onclick="switchToTab('createRequest')">Create Request</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Tab -->
+                    <div id="studentProfile" class="tab-pane">
+                        <div class="profile-container">
+                            <h3>Student Profile</h3>
+                            <div class="profile-completion-bar">
+                                <div class="completion-bar">
+                                    <div class="completion-progress" id="completionProgress" style="width: 100%"></div>
+                                </div>
+                                <span class="completion-text" id="completionText">100% Complete</span>
+                            </div>
+                            
+                            <form class="profile-form" id="studentProfileForm">
+                                <div class="profile-section">
+                                    <h4>Personal Information</h4>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Full Name</label>
+                                            <input type="text" class="form-control" id="fullName" value="Bhargav Teja" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Roll Number</label>
+                                            <input type="text" class="form-control" id="rollNumber" value="22071A67B7" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Email</label>
+                                            <input type="email" class="form-control" id="email" value="bhargav.teja@college.edu" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Phone</label>
+                                            <input type="tel" class="form-control" id="phoneNumber" value="+91-9876543210" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Date of Birth</label>
+                                            <input type="date" class="form-control" id="dateOfBirth" value="2003-05-15" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Blood Group</label>
+                                            <input type="text" class="form-control" id="bloodGroup" value="O+" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="profile-section">
+                                    <h4>Academic Details</h4>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Branch</label>
+                                            <input type="text" class="form-control" id="branch" value="Computer Science Engineering" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Semester</label>
+                                            <input type="number" class="form-control" id="semester" value="8" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Batch</label>
+                                            <input type="text" class="form-control" id="batch" value="2022-2026" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Section</label>
+                                            <input type="text" class="form-control" id="section" value="B" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="profile-section">
+                                    <h4>Hostel Information</h4>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Block</label>
+                                            <input type="text" class="form-control" id="hostelName" value="Block A" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Room Number</label>
+                                            <input type="text" class="form-control" id="roomNumber" value="A-101" required>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <div class="profile-section">
+                                    <h4>Parent Details</h4>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Father's Name</label>
+                                            <input type="text" class="form-control" id="fatherName" value="Mr. Ravi" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Father's Phone</label>
+                                            <input type="tel" class="form-control" id="fatherPhone" value="+91-9876543200" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Father's Email</label>
+                                            <input type="email" class="form-control" id="fatherEmail" value="Ravi@gmail.com" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Emergency Contact Phone</label>
+                                            <input type="tel" class="form-control" id="emergencyContactPhone" value="+91-9876543202" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="profile-section">
+                                    <h4>Address Information</h4>
+                                    <div class="form-group">
+                                        <label class="form-label">Permanent Address</label>
+                                        <textarea class="form-control" id="permanentAddress" rows="3" required>Pragathi Nagar, Hyderabad, Telangana - 500090</textarea>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">City</label>
+                                            <input type="text" class="form-control" id="city" value="Hyderabad" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">State</label>
+                                            <input type="text" class="form-control" id="state" value="Telangana" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">PIN Code</label>
+                                            <input type="text" class="form-control" id="pinCode" value="500090" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Local Guardian Phone</label>
+                                            <input type="tel" class="form-control" id="localGuardianPhone" value="+91-9876543203">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="profile-actions">
+                                    <button type="submit" class="btn btn--primary btn--lg">Save Profile</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parent Dashboard -->
+            <div id="parentDashboard" class="dashboard hidden">
+                <div class="tab-content">
+                    <div id="parentOverview" class="tab-pane active">
+                        <div class="parent-welcome">
+                            <h3 id="parentWelcome">Parent Dashboard</h3>
+                            <p id="parentInfo">Monitor and approve your child's outpass requests</p>
+                        </div>
+                        <div class="parent-stats">
+                            <div class="stat-card">
+                                <div class="stat-value" id="parentPendingCount">--</div>
+                                <div class="stat-label">Pending Approvals</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="parentApprovedCount">--</div>
+                                <div class="stat-label">Approved This Month</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="parentChildRisk">--</div>
+                                <div class="stat-label">Child Risk Score</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="parentChildViolations">--</div>
+                                <div class="stat-label">Child Violations</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="parentApprovals" class="tab-pane">
+                        <div class="action-header">
+                            <h3>Pending Approvals</h3>
+                            <p class="workflow-note">Review and approve requests. Only approved requests will be sent to admin for final approval.</p>
+                        </div>
+                        <div class="approval-cards" id="parentApprovalList">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+                    
+                    <div id="parentActivity" class="tab-pane">
+                        <h3>Student Activity</h3>
+                        <div class="activity-list" id="parentActivityList">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Dashboard -->
+            <div id="adminDashboard" class="dashboard hidden">
+                <div class="tab-content">
+                    <!-- System Overview -->
+                    <div id="adminOverview" class="tab-pane active">
+                        <div class="admin-header">
+                            <h3>System Overview</h3>
+                            <div class="admin-header-actions">
+                                <button class="btn btn--outline">📊 Export Report</button>
+                                <button class="btn btn--secondary">⚙️ System Settings</button>
+                            </div>
+                        </div>
+                        
+                        <div class="admin-overview-stats">
+                            <div class="overview-stat-card">
+                                <div class="stat-main">
+                                    <div class="stat-value">47</div>
+                                    <div class="stat-change positive">+12%</div>
+                                </div>
+                                <div class="stat-label">Total Requests</div>
+                                <div class="stat-subtitle">This month</div>
+                            </div>
+                            
+                            <div class="overview-stat-card">
+                                <div class="stat-main">
+                                    <div class="stat-value">87.3%</div>
+                                    <div class="stat-change negative">-2%</div>
+                                </div>
+                                <div class="stat-label">Approval Rate</div>
+                                <div class="stat-subtitle">This month</div>
+                            </div>
+                            
+                            <div class="overview-stat-card">
+                                <div class="stat-main">
+                                    <div class="stat-value">23</div>
+                                    <div class="stat-status">Current status</div>
+                                </div>
+                                <div class="stat-label">Active Outpasses</div>
+                                <div class="stat-subtitle">Students out now</div>
+                            </div>
+                            
+                            <div class="overview-stat-card alert">
+                                <div class="stat-main">
+                                    <div class="stat-value">5</div>
+                                    <div class="stat-status alert">Requires attention</div>
+                                </div>
+                                <div class="stat-label">Late Returns</div>
+                                <div class="stat-subtitle">Past due time</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Violation Alerts Section -->
+                        <div class="violation-alerts-section">
+                            <h4>Violation Alerts</h4>
+                            <div class="violation-alerts-list" id="violationAlertsList">
+                                <!-- Dynamic content -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Queue -->
+                    <div id="adminQueue" class="tab-pane">
+                        <div class="queue-header">
+                            <h3>Approval Queue</h3>
+                            <p class="workflow-note">Only parent-approved requests appear in this queue for final admin approval.</p>
+                        </div>
+                        <div class="queue-list" id="adminQueueList">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+
+                    <!-- Students Management -->
+                    <div id="adminStudents" class="tab-pane">
+                        <div class="students-header">
+                            <div class="students-header-content">
+                                <h3>Student Management</h3>
+                                <div class="search-filters">
+                                    <input type="text" class="form-control" placeholder="Search students..." id="studentSearch">
+                                    <select class="form-control" id="hostelFilter">
+                                        <option value="">All Hostels</option>
+                                        <option value="Hostel A">Hostel A</option>
+                                        <option value="Hostel B">Hostel B</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="student-management-card">
+                            <div class="student-profile-header">
+                                <div class="student-avatar">RS</div>
+                                <div class="student-info">
+                                    <h4>Bhargav Teja</h4>
+                                    <p>Hostel A, Room A-101 • Computer Science Engineering • Semester 8</p>
+                                </div>
+                                <div class="student-stats">
+                                    <div class="student-stat-box risk">
+                                        <div class="stat-value" id="adminStudentRisk">35</div>
+                                        <div class="stat-label">Risk</div>
+                                    </div>
+                                    <div class="student-stat-box">
+                                        <div class="stat-value">2</div>
+                                        <div class="stat-label">Requests</div>
+                                    </div>
+                                    <div class="student-stat-box">
+                                        <div class="stat-value">1</div>
+                                        <div class="stat-label">Violations</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reports -->
+                    <div id="adminReports" class="tab-pane">
+                        <div class="reports-header">
+                            <h3>Analytics & Reports</h3>
+                        </div>
+                        
+                        <div class="analytics-sections">
+                            <div class="analytics-section">
+                                <h4>Weekly Summary</h4>
+                                <div class="weekly-summary">
+                                    <div class="summary-stat">
+                                        <div class="stat-value">47</div>
+                                        <div class="stat-label">Total Requests</div>
+                                    </div>
+                                    <div class="summary-stat">
+                                        <div class="stat-value">41</div>
+                                        <div class="stat-label">Approved (87%)</div>
+                                    </div>
+                                    <div class="summary-stat">
+                                        <div class="stat-value">3</div>
+                                        <div class="stat-label">Pending</div>
+                                    </div>
+                                    <div class="summary-stat">
+                                        <div class="stat-value">3</div>
+                                        <div class="stat-label">Rejected</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="analytics-section">
+                                <h4>Risk Analysis</h4>
+                                <div class="risk-analysis">
+                                    <div class="risk-breakdown">
+                                        <div class="risk-item low">
+                                            <span class="risk-percentage">65%</span>
+                                            <span class="risk-label">Low Risk</span>
+                                        </div>
+                                        <div class="risk-item medium">
+                                            <span class="risk-percentage">28%</span>
+                                            <span class="risk-label">Medium Risk</span>
+                                        </div>
+                                        <div class="risk-item high">
+                                            <span class="risk-percentage">7%</span>
+                                            <span class="risk-label">High Risk</span>
+                                        </div>
+                                    </div>
+                                    <p class="risk-note">High risk cases increased 15% this month</p>
+                                </div>
+                            </div>
+                            
+                            <div class="analytics-section">
+                                <h4>Violation Trends</h4>
+                                <div class="violation-trends">
+                                    <div class="trend-item">
+                                        <div class="trend-value">12</div>
+                                        <div class="trend-label">Late Returns</div>
+                                    </div>
+                                    <div class="trend-item">
+                                        <div class="trend-value">3</div>
+                                        <div class="trend-label">Unauthorized Extensions</div>
+                                    </div>
+                                    <div class="trend-item">
+                                        <div class="trend-value">1</div>
+                                        <div class="trend-label">False Information</div>
+                                    </div>
+                                </div>
+                                <p class="trend-note">Overall violations down 20%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Request Details Modal -->
+    <div class="modal hidden" id="requestModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Request Details</h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Approval Modal -->
+    <div class="modal hidden" id="approvalModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="approvalModalTitle">Approve Request</h3>
+                <button class="modal-close" id="closeApprovalModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="approval-content" id="approvalContent">
+                    <!-- Dynamic content -->
+                </div>
+                <div class="approval-form">
+                    <div class="form-group">
+                        <label class="form-label">Add Comments (Optional)</label>
+                        <textarea class="form-control" id="approvalComments" rows="3" placeholder="Additional comments or instructions..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn--outline" id="rejectRequest">Reject</button>
+                <button class="btn btn--primary" id="approveRequest">Approve</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal hidden" id="successModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="successTitle">Success</h3>
+                <button class="modal-close" id="closeSuccessModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="successMessage">Operation completed successfully.</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn--primary" id="successOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div class="modal hidden" id="errorModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="errorTitle">Error</h3>
+                <button class="modal-close" id="closeErrorModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="errorMessage">An error occurred.</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn--primary" id="errorOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="api.js"></script>
+    <script src="app.js?v=1"></script>
+</body>
+</html>

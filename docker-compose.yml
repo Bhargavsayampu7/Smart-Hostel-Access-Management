@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # Express.js Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongo:27017/hostel-access-control
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_EXPIRE=7d
+      - USE_ML_PREDICTION=true
+      - ML_API_URL=http://ml-service:8000
+    depends_on:
+      mongo:
+        condition: service_started
+      ml-service:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - hostel-network
+
+  # MongoDB
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - hostel-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ML Service (Python)
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./ml-service/models:/app/models
+    networks:
+      - hostel-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  hostel-network:
+    driver: bridge
+
+volumes:
+  mongo_data:
