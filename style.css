@@ -1405,6 +1405,41 @@ select.form-control {
   border-radius: var(--radius-full);
 }
 
+.risk-score-section {
+  margin-top: var(--space-12);
+}
+
+.risk-score-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.risk-score-secondary {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-6) var(--space-12);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  background: var(--color-bg-1);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.student-risk-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8);
+  margin: var(--space-8) 0;
+}
+
+.student-risk-summary .violations-text {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
 /* Form Styles */
 .form-container {
   max-width: 800px;

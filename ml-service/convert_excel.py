@@ -5,10 +5,12 @@ Usage: python convert_excel.py
 
 import pandas as pd
 import os
+import sys
 
 def convert_excel_to_csv():
     """Convert Excel file to CSV"""
-    excel_file = "../synthetic_outpass_dataset.xlsx"
+    # Allow passing a custom Excel path via CLI arg or env var, fallback to default
+    excel_file = sys.argv[1] if len(sys.argv) > 1 else os.environ.get('EXCEL_INPUT_PATH', "../synthetic_outpass_dataset.xlsx")
     csv_file = "data/synthetic_outpass_dataset.csv"
     
     print("Converting Excel to CSV...")

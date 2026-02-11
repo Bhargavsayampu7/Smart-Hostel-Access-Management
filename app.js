@@ -1,4 +1,3 @@
-
 // Application Data - Updated with new workflow
 const appData = {
   student: {
@@ -238,6 +237,7 @@ let currentStep = 1;
 let maxSteps = 3;
 let selectedRequestType = null;
 let countdownInterval = null;
+const ENABLE_AUTO_LOGIN = false;
 
 // Initialize application
 document.addEventListener('DOMContentLoaded', function() {
@@ -250,7 +250,7 @@ async function initializeApp() {
   
   // Check if user is already logged in
   const token = window.API?.getAuthToken();
-  if (token) {
+  if (ENABLE_AUTO_LOGIN && token) {
     try {
       const response = await window.API.auth.getCurrentUser();
       currentUser = response.user;
@@ -261,6 +261,9 @@ async function initializeApp() {
       console.error('Auth check failed:', error);
       window.API.auth.logout();
     }
+  } else if (token) {
+    // Clear tokens from previous sessions when auto-login is disabled
+    window.API.auth.logout();
   }
   
   setupEventListeners();
@@ -321,13 +324,7 @@ function setupEventListeners() {
   });
   
   // Outpass type selection
-  document.querySelectorAll('.outpass-type-card').forEach(card => {
-    card.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      selectRequestType(card);
-    });
-  });
+  setupRequestTypeSelection();
   
   // Navigation
   const backBtn = document.getElementById('backToRoles');
@@ -383,11 +380,35 @@ function setupEventListeners() {
   console.log('Event listeners setup completed');
 }
 
+function setupRequestTypeSelection() {
+  const container = document.querySelector('.outpass-type-cards');
+  if (!container) return;
+
+  // Ensure we don't attach duplicate handlers
+  if (container.dataset.listenerAttached === 'true') {
+    return;
+  }
+
+  container.addEventListener('click', (event) => {
+    const card = event.target.closest('.outpass-type-card');
+    if (!card) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    selectRequestType(card);
+  });
+
+  container.dataset.listenerAttached = 'true';
+}
+
 function selectRequestType(typeCard) {
   document.querySelectorAll('.outpass-type-card').forEach(c => c.classList.remove('selected'));
   typeCard.classList.add('selected');
   selectedRequestType = typeCard.getAttribute('data-type');
   console.log('Request type selected:', selectedRequestType);
+
+  updateFormNavigation();
 }
 
 function setupModalCloseHandlers() {
@@ -439,6 +460,8 @@ function setupFormNavigation() {
       submitRequest();
     });
   }
+
+  updateFormNavigation();
 }
 
 function setupProfileForm() {
@@ -684,7 +707,7 @@ async function loadStudentOverview() {
   if (welcomeEl) welcomeEl.textContent = `Welcome back, ${student.personalInfo?.fullName || currentUser.email}!`;
   if (infoEl) infoEl.textContent = `${student.hostelInfo?.hostelName || ''}, Room ${student.hostelInfo?.roomNumber || ''} • ${student.academicInfo?.branch || ''}`;
   
-  const activeRequests = requests.filter(req => req.status === 'approved' && req.qrCode);
+  const activeRequests = requests.filter(isRequestActive);
   
   if (totalRequestsEl) totalRequestsEl.textContent = stats.totalRequests || 0;
   if (activeRequestsEl) activeRequestsEl.textContent = activeRequests.length;
@@ -749,9 +772,9 @@ async function loadStudentQRCode() {
   try {
     const response = await window.API.request.getAll();
     const requests = response.requests || [];
-    const activeRequest = requests.find(req => 
-      req.status === 'approved' && req.qrCode
-    );
+    const activeRequest = requests
+      .filter(isRequestActive)
+      .sort((a, b) => new Date(a.departureTime) - new Date(b.departureTime))[0];
     
     if (activeRequest && activePassDisplay && noActivePass) {
       // Get QR code details
@@ -1050,8 +1073,14 @@ async function loadAdminQueue() {
           <div class="student-context" style="margin: 16px 0; padding: 12px; background: var(--color-bg-1); border-radius: var(--radius-base);">
             <strong>Student Context:</strong><br>
             ${student.personalInfo?.fullName || 'N/A'} • ${student.hostelInfo?.hostelName || 'N/A'}, Room ${student.hostelInfo?.roomNumber || 'N/A'}<br>
-            Risk Score: <span class="risk-score-badge risk-${getRiskLevel(request.studentRiskScore || request.riskScore || 0)}">${request.studentRiskScore || request.riskScore || 0}</span> 
-            (${request.studentViolations || 0} violations)<br>
+            <div class="student-risk-summary">
+              ${renderRiskScoreSection(request, {
+                requestLabel: 'Request Risk',
+                overallLabel: 'Student Risk',
+                singleLabel: 'Student Risk'
+              })}
+              <span class="violations-text">(${request.studentViolations || 0} violations)</span>
+            </div>
             <strong>Parent Approved:</strong> ${formatDateTime(request.parentApprovedAt)}<br>
             <strong>Parent Comments:</strong> ${request.parentComments || 'None'}
           </div>
@@ -1092,6 +1121,11 @@ async function loadAdminReports() {
 
 // Form Functions
 function nextFormStep() {
+  const nextBtn = document.getElementById('nextStep');
+  if (nextBtn && nextBtn.disabled) {
+    return;
+  }
+
   if (validateCurrentStep()) {
     if (currentStep < maxSteps) {
       document.getElementById(`step${currentStep}`).classList.remove('active');
@@ -1121,7 +1155,10 @@ function updateFormNavigation() {
   const submitBtn = document.getElementById('submitRequest');
   
   if (prevBtn) prevBtn.style.display = currentStep > 1 ? 'block' : 'none';
-  if (nextBtn) nextBtn.style.display = currentStep < maxSteps ? 'block' : 'none';
+  if (nextBtn) {
+    nextBtn.style.display = currentStep < maxSteps ? 'block' : 'none';
+    nextBtn.disabled = currentStep === 1 && !selectedRequestType;
+  }
   if (submitBtn) submitBtn.style.display = currentStep === maxSteps ? 'block' : 'none';
 }
 
@@ -1540,7 +1577,13 @@ window.shareQR = function(qrCode) {
   }
 };
 
-window.switchToTab = function(tabId) {
+window.switchToTab = function(tabId, opts) {
+  const options = typeof opts === 'object' && opts !== null ? opts : {};
+
+  if (tabId === 'createRequest' && options.resetForm !== false) {
+    resetRequestForm();
+  }
+
   const tab = document.querySelector(`[data-target="${tabId}"]`);
   if (tab) {
     switchTab(tabId, tab);
@@ -1660,6 +1703,76 @@ function showLandingPage() {
 }
 
 // Utility Functions
+function normalizeRiskScore(score) {
+  if (score === null || score === undefined) return null;
+  const value = typeof score === 'number' ? score : parseFloat(score);
+  if (!Number.isFinite(value)) return null;
+
+  if (Math.abs(value) <= 1) {
+    return Math.round(value * 1000) / 10; // scale probabilities (0-1) to 0-100 with 1 decimal
+  }
+
+  const clamped = Math.min(Math.max(value, 0), 100);
+  return Math.round(clamped * 10) / 10;
+}
+
+function formatRiskScore(score) {
+  if (score === null || score === undefined || !Number.isFinite(score)) {
+    return '--';
+  }
+  const rounded = Math.round(score * 10) / 10;
+  return Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(1);
+}
+
+function renderRiskScoreSection(request, options = {}) {
+  const requestRisk = normalizeRiskScore(request?.riskScore);
+  const overallRisk = normalizeRiskScore(request?.studentRiskScore ?? request?.overallRiskScore);
+  const threshold = options.threshold ?? 5;
+  const hasRequestRisk = requestRisk !== null;
+  const hasOverallRisk = overallRisk !== null;
+  const primaryScore = hasOverallRisk ? overallRisk : (hasRequestRisk ? requestRisk : null);
+  const primaryLabel = hasOverallRisk
+    ? (options.overallLabel || 'Student Risk')
+    : (hasRequestRisk ? (options.requestLabel || 'Request Risk') : (options.singleLabel || 'Risk Score'));
+  const primaryLevel = getRiskLevel(primaryScore || 0);
+
+  const showSecondary = hasRequestRisk && hasOverallRisk && Math.abs(requestRisk - overallRisk) > threshold;
+  const secondaryLabel = options.requestLabel || 'Request Risk';
+
+  return `
+    <div class="risk-score-group">
+      <div class="risk-score-badge risk-${primaryLevel}">
+        ${primaryLabel}: ${formatRiskScore(primaryScore)}
+      </div>
+      ${showSecondary ? `
+        <div class="risk-score-secondary risk-${getRiskLevel(requestRisk)}">
+          ${secondaryLabel}: ${formatRiskScore(requestRisk)}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function isRequestActive(request) {
+  if (!request || request.status !== 'approved' || !request.qrCode) {
+    return false;
+  }
+
+  const now = new Date();
+  const returnTime = request.returnTime ? new Date(request.returnTime) : null;
+  const actualReturn = request.actualReturnTime ? new Date(request.actualReturnTime) : null;
+
+  if (actualReturn && actualReturn <= now) {
+    return false;
+  }
+
+  if (returnTime && returnTime <= now) {
+    return false;
+  }
+
+  return true;
+}
+
 function createRequestCard(request, detailed = false) {
   const student = request.studentId || {};
   const requestId = request._id || request.id;
@@ -1684,8 +1797,12 @@ function createRequestCard(request, detailed = false) {
         ${formatDateTime(request.returnTime)}
       </div>
     </div>
-    <div class="risk-score-badge risk-${getRiskLevel(request.riskScore || 0)}">
-      Risk Score: ${request.riskScore || 0}
+    <div class="risk-score-section">
+      ${renderRiskScoreSection(request, {
+        requestLabel: 'Request Risk',
+        overallLabel: 'Student Risk',
+        singleLabel: 'Risk Score'
+      })}
     </div>
   `;
 }

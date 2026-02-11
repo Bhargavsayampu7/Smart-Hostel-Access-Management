@@ -16,7 +16,7 @@ import os
 
 # Configuration
 MODEL_VERSION = "v1.0"
-DATA_PATH = "data/historical_requests.csv"  # Update this to your dataset path
+DATA_PATH = "../synthetic_outpass_dataset.csv"  # Update this to your dataset path
 OUTPUT_DIR = "models"
 
 def load_data(filepath):
@@ -35,18 +35,25 @@ def prepare_features(df):
     
     # TODO: Update these column names based on your actual dataset
     feature_columns = [
-        'past_violations_30d',
-        'past_violations_365d',
-        'late_returns_30d',
-        'rejection_rate',
-        'request_frequency_7d',
-        'request_frequency_30d',
-        'request_type',
-        'destination',
-        'request_time_hour',
-        'request_day_of_week',
-        'request_duration_hours'
-    ]
+       "age",
+       "year",
+       "gpa",
+       "hostel_block",
+       "parent_contact_reliable",
+       "past_violations_30d",
+       "past_violations_365d",
+       "request_time_hour",
+       "requested_duration_hours",
+       "actual_return_delay_minutes",
+       "parent_response_time_minutes",
+       "parent_action",
+       "destination_risk",
+       "emergency_flag",
+       "group_request",
+       "weekend_request",
+       "previous_no_show",
+       "requests_last_7days",
+   ]
     
     # Check which features exist in the data
     available_features = [col for col in feature_columns if col in df.columns]
@@ -56,26 +63,18 @@ def prepare_features(df):
     
     # Separate target variable
     # TODO: Update this based on your target column name
-    if 'had_violation' in df.columns:
-        y = df['had_violation']
-    elif 'had_issue' in df.columns:
-        y = df['had_issue']
-    elif 'risk_label' in df.columns:
-        y = df['risk_label']
-    else:
-        raise ValueError("Could not find target column. Expected: 'had_violation', 'had_issue', or 'risk_label'")
+    y = df['label_violation']
     
     print(f"✅ Features: {X.shape[1]}, Target distribution: {y.value_counts().to_dict()}")
     return X, y
 
 def encode_categorical_features(X, fit=True):
-    """Encode categorical features"""
     print("Encoding categorical features...")
-    
+
     label_encoders = {}
-    categorical_cols = ['request_type', 'destination'] if 'request_type' in X.columns else []
-    categorical_cols = [col for col in categorical_cols if col in X.columns]
-    
+    # Use your actual string columns
+    categorical_cols = [col for col in ['hostel_block', 'destination_risk'] if col in X.columns]
+
     if fit:
         # Fit encoders
         for col in categorical_cols:
@@ -83,6 +82,7 @@ def encode_categorical_features(X, fit=True):
             X[col] = le.fit_transform(X[col].astype(str))
             label_encoders[col] = le
             print(f"  Encoded {col}: {len(le.classes_)} categories")
+    
     else:
         # Load existing encoders
         with open(f'{OUTPUT_DIR}/label_encoders.pkl', 'rb') as f:
@@ -111,11 +111,10 @@ def train_model(X_train, y_train, X_test, y_test):
     )
     
     model.fit(
-        X_train, y_train,
-        eval_set=[(X_test, y_test)],
-        early_stopping_rounds=10,
-        verbose=True
-    )
+    X_train, y_train,
+    eval_set=[(X_test, y_test)],
+    verbose=True,
+)
     
     print("✅ Model training complete")
     return model

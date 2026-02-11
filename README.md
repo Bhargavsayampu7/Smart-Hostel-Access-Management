@@ -1,262 +1,289 @@
-# Smart Hostel Access Control System + ML Risk Prediction 🏠🤖
+# Smart Hostel Access Management (React + FastAPI + ML)
 
-> **A complete hostel outpass management system with Machine Learning-based risk prediction**
-
-[![Status](https://img.shields.io/badge/status-production%20ready-green)]()
-[![ML](https://img.shields.io/badge/ML-enabled-blue)]()
-[![Docker](https://img.shields.io/badge/Docker-ready-blue)]()
-
-## 🎯 Features
-
-### Core System
-- ✅ **Student Portal** - Create outpass requests, manage profile, view QR codes
-- ✅ **Parent Portal** - Review and approve student requests
-- ✅ **Admin Dashboard** - Final approval, violation management, analytics
-- ✅ **QR Code Generation** - Automatic QR codes for approved requests
-- ✅ **JWT Authentication** - Secure authentication
-- ✅ **MongoDB Database** - Persistent data storage
-
-### ML Risk Prediction (NEW!)
-- ✅ **Machine Learning API** - Python FastAPI microservice
-- ✅ **Hybrid Approach** - ML predictions with rule-based fallback
-- ✅ **Model Agnostic** - Easy to swap models
-- ✅ **Feature Engineering** - Rich feature set for predictions
-- ✅ **Explainability** - SHAP support for feature importance
-- ✅ **Dockerized** - Full containerization
+> **Modern, ML-powered hostel outpass system with QR, live location, and role-based dashboards.**
 
 ---
 
-## 🚀 Quick Start
+## 🎯 Key Features
 
-### Option 1: Just Test (10 min)
-```bash
-# Start everything
-docker-compose up
+- **Role-based access**
+  - Student, Parent, Warden, Security roles with protected routes.
+  - Landing screen lets you pick a role, then pre-fills demo credentials.
 
-# Or manually:
-cd backend && npm start
-cd ml-service && python app.py
-```
+- **Student experience**
+  - Create outpass requests (outpass/homepass/emergency).
+  - See status and ML risk signal for each request.
+  - Generate QR codes for approved passes.
+  - Live geolocation sharing while an active pass is in use.
 
-### Option 2: Train & Deploy (30 min)
-```bash
-# See QUICK_TRAIN_AND_DEPLOY.md for full steps
-# Or: INTEGRATE_YOUR_DATA.md if you have your dataset
-```
+- **Parent experience**
+  - Approve/reject child requests.
+  - See child’s aggregated ML risk score and violation count.
+  - View last known live location with an embedded map.
 
----
+- **Warden (admin) experience**
+  - Approval queue for parent-approved requests.
+  - Student risk table (latest ML risk + pass status).
+  - Analytics:
+    - Risk distribution (low/medium/high).
+    - Late returns per day.
+    - Parent response time histogram.
 
-## 📖 Documentation Guide
+- **Security experience**
+  - Camera-based QR scanning + manual token entry.
+  - One-time QR validation with strong replay protection.
+  - OUT/IN tracking:
+    - First ALLOW marks exit.
+    - Second ALLOW marks return and closes the pass.
+  - Pass history view with scan events, location points, and delay minutes.
 
-| What You Want | Read This |
-|---------------|-----------|
-| **See it work quickly** | `README_QUICKSTART.md` |
-| **Integrate your dataset** | `INTEGRATE_YOUR_DATA.md` |
-| **Train & deploy in 15 min** | `QUICK_TRAIN_AND_DEPLOY.md` |
-| **Understand architecture** | `ML_INTEGRATION_GUIDE.md` |
-| **Plan next steps** | `NEXT_STEPS_ROADMAP.md` |
-| **Visual overview** | `VISUAL_ROADMAP.md` |
-| **Complete summary** | `SUMMARY_README.md` |
-| **Starting from scratch** | `START_HERE.md` |
+- **ML risk engine**
+  - Python FastAPI microservice running XGBoost v1.0.
+  - Trained on `synthetic_outpass_dataset.csv`.
+  - Centralized `/api/pass/risk` endpoint in FastAPI that calls the ML service.
+  - Risk scores stored on passes and reused across dashboards (student/parent/warden).
 
 ---
 
 ## 🛠️ Tech Stack
 
-**Frontend:**
-- HTML5, CSS3, JavaScript (Vanilla)
-- Responsive design with modern UI
+- **Frontend**
+  - React 18 + Vite
+  - React Router v6
+  - Tailwind CSS
+  - Axios
+  - Recharts (analytics)
+  - react-qr-reader (camera QR scanner)
 
-**Backend:**
-- Node.js with Express.js
-- MongoDB with Mongoose
-- JWT for authentication
-- bcryptjs for password hashing
+- **Backend (API)**
+  - FastAPI
+  - SQLModel / SQLAlchemy
+  - SQLite (dev) – can be swapped for Postgres/MySQL
+  - JWT (python-jose) for auth
 
-**ML Service:**
-- Python 3.10+
-- FastAPI
-- XGBoost
-- scikit-learn
-- SHAP (optional)
-
-**Deployment:**
-- Docker & Docker Compose
-- MongoDB Atlas (optional)
+- **ML Service**
+  - FastAPI
+  - scikit-learn + XGBoost
+  - joblib / pickle for model artifacts
+  - Single active model: `risk_model_v1.0.joblib`
 
 ---
 
-## 📁 Project Structure
+## 📁 Project Structure (current)
 
-```
+```bash
 final-hostel-system.zip/
-├── 📘 Quick Reference
-│   ├── START_HERE.md               → Start here first!
-│   ├── README_QUICKSTART.md        → Ultra-quick guide
-│   ├── YOUR_NEXT_STEPS.md          → What to do next
-│   └── VISUAL_ROADMAP.md           → Visual overview
+├── backend-fastapi/          # FastAPI backend (main API)
+│   ├── app/
+│   │   ├── main.py           # App entry, routers wired under /api
+│   │   ├── models.py         # SQLModel tables (users, passes, qr_tokens, scan_events, locations, ...)
+│   │   ├── schemas.py        # Pydantic request/response models
+│   │   ├── deps.py           # Auth dependencies (get_current_user, role checks)
+│   │   ├── core/             # Security & config
+│   │   ├── db/               # DB session
+│   │   ├── routers/          # Feature routers:
+│   │   │   ├── auth.py       # /api/auth (login, me, seed demo users)
+│   │   │   ├── passes.py     # /api/passes (core pass creation/listing)
+│   │   │   ├── approvals.py  # /api/approvals (parent/admin decisions)
+│   │   │   ├── requests_compat.py  # /api/requests (React compatibility)
+│   │   │   ├── students_compat.py  # /api/students (profile + ML-backed stats)
+│   │   │   ├── parents_compat.py   # /api/parents (dashboard + ML-backed risk)
+│   │   │   ├── admin_compat.py     # /api/admin (queue, students, analytics)
+│   │   │   ├── qr.py         # /api/qr (phase-aware QR tokens for OUT/IN)
+│   │   │   ├── scan.py       # /api/scan (QR validation, pass history)
+│   │   │   ├── location.py   # /api/location (geolocation heartbeats & latest)
+│   │   │   └── risk.py       # /api/pass/risk (delegates to ML service)
+│   │   └── services/ml_client.py  # HTTP client for ML service
+│   └── requirements.txt
 │
-├── 🤖 ML Integration
-│   ├── INTEGRATE_YOUR_DATA.md      → Use your dataset
-│   ├── QUICK_TRAIN_AND_DEPLOY.md   → Fast deployment
-│   ├── ML_INTEGRATION_GUIDE.md     → Complete guide
-│   └── NEXT_STEPS_ROADMAP.md       → Planning guide
+├── frontend/                 # React/Vite frontend
+│   ├── index.html
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── tailwind.config.js
+│   └── src/
+│       ├── App.jsx           # Routing + ProtectedRoute + role landing
+│       ├── context/AuthContext.jsx
+│       ├── services/api.js   # Axios client, API wrappers
+│       ├── components/       # Layout, Card, Button, Input, etc.
+│       └── pages/
+│           ├── RoleSelect.jsx
+│           ├── Login.jsx
+│           ├── Register.jsx
+│           ├── StudentDashboard.jsx
+│           ├── ParentDashboard.jsx
+│           ├── AdminDashboard.jsx
+│           ├── SecurityDashboard.jsx
+│           └── PassHistory.jsx
 │
-├── 🐍 ML Service
-│   ├── ml-service/
-│   │   ├── app.py                  → FastAPI service
-│   │   ├── train_model.py          → Model training
-│   │   ├── evaluate_model.py       → Evaluation + ROC
-│   │   ├── requirements.txt        → Dependencies
-│   │   └── data/                   → Your dataset here
-│   │
-├── 🔧 Backend
-│   ├── backend/
-│   │   ├── utils/
-│   │   │   ├── mlRiskPredictor.js  → ML client
-│   │   │   └── riskCalculator.js   → Risk calculation
-│   │   └── models/                 → MongoDB models
-│   │
-├── 🐳 Deployment
-│   ├── docker-compose.yml          → Full stack
-│   ├── backend/Dockerfile          → Backend container
-│   └── ml-service/Dockerfile       → ML container
+├── ml-service/               # ML microservice
+│   ├── app.py                # FastAPI risk service
+│   ├── train_model.py        # Training pipeline (XGBoost v1.0)
+│   ├── requirements.txt
+│   ├── data/
+│   │   └── synthetic_outpass_dataset.csv  # Training data (copy of root CSV)
+│   └── models/
+│       ├── risk_model_v1.0.joblib
+│       ├── risk_model_v1.0.json
+│       ├── scaler_v1.0.joblib
+│       ├── label_encoders_v1.0.pkl
+│       ├── feature_names_v1.0.txt
+│       └── feature_importance_v1.0.csv
 │
-└── 📊 Your Data
-    └── synthetic_outpass_dataset.xlsx → Your dataset!
+├── synthetic_outpass_dataset.csv  # Source dataset used by ml-service
+└── README.md                      # This file
 ```
 
----
-
-## 🎯 Getting Started
-
-### For Quick Testing
-1. **Read:** `README_QUICKSTART.md`
-2. **Run:** `docker-compose up`
-3. **Test:** http://localhost:5001
-
-### For Full Integration (You Have Dataset)
-1. **Read:** `QUICK_TRAIN_AND_DEPLOY.md`
-2. **Do:** Convert Excel → CSV
-3. **Do:** Train model
-4. **Do:** Update app.py
-5. **Test:** Everything works
-
-### For Custom Integration
-1. **Read:** `INTEGRATE_YOUR_DATA.md`
-2. **Follow:** Step-by-step guide
-3. **Test:** Your trained model
+> Note: The legacy Node.js backend and static HTML/JS frontend have been removed.  
+> All functionality is now served by `backend-fastapi/` + `frontend/` + `ml-service/`.
 
 ---
 
-## 🔑 Demo Credentials
+## 🚀 Running the System (dev)
 
-After seeding database (`cd backend && npm run seed`):
+Open three terminals from the project root.
 
-- **Student**: `bhargav.teja@college.edu` / `password123`
-- **Parent**: `ravi@gmail.com` / `password123`
-- **Admin**: `venkat.rao@college.edu` / `password123`
+### 1. Start the ML service
+
+```bash
+cd ml-service
+pip install -r requirements.txt
+python train_model.py     # optional if you want to retrain
+uvicorn app:app --host 0.0.0.0 --port 8000
+```
+
+### 2. Start the FastAPI backend
+
+```bash
+cd backend-fastapi
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 5002
+```
+
+On startup, the backend will:
+
+- Create the SQLite dev DB if missing.
+- Seed demo users (student, parent, warden, security) exactly once.
+
+### 3. Start the React frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Vite will show the local URL (typically `http://localhost:5173`).
 
 ---
 
-## 📊 ML Model Information
+## 🔑 Demo Credentials (FastAPI + React)
 
-**Current:** Mock model (rule-based simulation)  
-**Target:** XGBoost trained on historical data  
-**Features:** Violations, late returns, rejection rate, frequency, context  
-**Categories:** Low (0-30), Medium (31-60), High (61-100)  
+These are seeded by `backend-fastapi/app/routers/auth.py` on first run:
 
-**Training:**
+- **Student**: `student@test.com` / `student123`
+- **Parent**: `parent@test.com` / `parent123`
+- **Warden (admin)**: `warden@test.com` / `warden123`
+- **Security**: `security@test.com` / `security123`
+
+Login flow:
+
+1. Visit `/` → role selection cards.
+2. Click a role → `/login?role=student|parent|warden|security` with credentials pre-filled.
+3. Submit → redirected to:
+   - `/student`
+   - `/parent`
+   - `/warden`
+   - `/security`
+
+---
+
+## 📊 ML Model Usage
+
+- **Training**
+
 ```bash
 cd ml-service
 pip install -r requirements.txt
 python train_model.py
 ```
 
----
+This:
 
-## 🐳 Docker Deployment
+- Loads `../synthetic_outpass_dataset.csv`.
+- Encodes categorical features (`hostel_block`, `destination_risk`).
+- Trains an XGBoost classifier and evaluates it.
+- Saves v1.0 artifacts under `ml-service/models/`.
 
-```bash
-# Start everything
-docker-compose up -d
+- **Prediction**
+  - Frontend → FastAPI: `POST /api/pass/risk` with feature vector.
+  - FastAPI → ML service: `POST http://localhost:8000/predict`.
+  - ML service returns `risk_score`, `risk_category`, `risk_probability`.
+  - FastAPI stores risk scores on `Pass` records; dashboards aggregate/display them.
 
-# View logs
-docker-compose logs -f
-
-# Stop
-docker-compose down
-```
-
-Services:
-- **Backend**: http://localhost:5001
-- **ML Service**: http://localhost:8000
-- **MongoDB**: localhost:27017
+If the ML service is down, the backend will gracefully fall back to mock predictions via the ML client wrapper.
 
 ---
 
-## 🧪 API Endpoints
+## 🔐 Security Model (overview)
 
-### Core Endpoints
-- `POST /api/auth/login` - Login
-- `POST /api/requests` - Create outpass request
-- `GET /api/requests` - Get requests
-- `PUT /api/requests/:id/parent-approve` - Parent approval
-- `PUT /api/requests/:id/admin-approve` - Admin approval
-
-### ML Endpoints
-- `POST http://localhost:8000/predict` - Predict risk
-- `GET http://localhost:8000/health` - Health check
-
----
-
-## 📈 ML Workflow
-
-```
-Student Request → Backend → ML Service
-                      ↓           ↓
-                    Data    Model Prediction
-                      ↓           ↓
-                    └─────→ Risk Score ←────┘
-                             ↓
-                    Store in Database
-                             ↓
-                    Show in UI/QR
-```
-
-**Fallback:** If ML service down → Use rule-based calculation
+- JWT-based auth for all protected routes (`/api/**`).
+- Role guards:
+  - `require_role("student")`, `require_role("parent")`, `require_role("admin")`, `require_role("security")`.
+- QR tokens:
+  - Short-lived signed JWTs with `pass_id`, `student_id`, `jti`, `nonce`, and `phase`.
+  - Stored nonce hashes in `qr_tokens` prevent tampering and replay.
+- Scan validation:
+  - Verifies signature, TTL, nonce, one-time use, and pass status (`approved`).
+  - Records every scan (allow/deny) in `scan_events` for auditing.
 
 ---
 
-## 🎓 Learning Resources
+## 🧪 Important API Endpoints (FastAPI)
 
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [XGBoost Guide](https://xgboost.readthedocs.io/)
-- [Docker Compose](https://docs.docker.com/compose/)
-- [Express.js](https://expressjs.com/)
-- [MongoDB](https://www.mongodb.com/docs/)
+All paths are under `http://localhost:5002/api`.
+
+- **Auth**
+  - `POST /auth/login`
+  - `GET /auth/me`
+
+- **Student + Parent (compat)**
+  - `GET /students/profile`
+  - `GET /students/stats`  → ML-backed risk + violations
+  - `GET /parents/dashboard` → childRisk + childViolations
+  - `GET /parents/pending-approvals`
+  - `GET /parents/activity`
+
+- **Requests / Passes**
+  - `POST /requests`  → create pass (compat payload)
+  - `GET /requests`   → list passes (role-aware)
+  - `PUT /requests/{id}/parent-approve`
+  - `PUT /requests/{id}/admin-approve`
+  - `GET /requests/{id}/qr` → student-only QR (phase-aware)
+
+- **Risk**
+  - `POST /pass/risk` → ML risk computation (delegates to ML service)
+
+- **Location**
+  - `POST /location` → student heartbeat while pass active
+  - `GET /location/latest/{pass_id}` → last known location (student/parent/admin/security)
+
+- **QR / Scan / History**
+  - `GET /qr/{pass_id}` → issue OUT/IN QR for approved passes
+  - `POST /scan` → validate token, record OUT/IN, set `returned_at` on IN
+  - `GET /scan/history/{pass_id}` → pass summary + scan events + locations + delay
 
 ---
 
-## 🐛 Troubleshooting
+## 📌 Notes
 
-**ML service not responding:**
-```bash
-curl http://localhost:8000/health
-docker-compose logs ml-service
-```
+- This repo is optimized for **local development and demonstration**:
+  - SQLite for simplicity (swap for Postgres/MySQL for production).
+  - CORS wide open (`allow_origins=["*"]`) – tighten for production.
+- The legacy Node.js + Mongo implementation has been superseded by this stack.
 
-**Backend not using ML:**
-```bash
-export USE_ML_PREDICTION=true
-# Check logs: Should see "ML Risk: XX.X"
-```
-
-**MongoDB issues:**
-```bash
-docker-compose logs mongo
-# Or install MongoDB locally
-```
 
 **More help:** Check documentation files above or see `ML_INTEGRATION_GUIDE.md` → Troubleshooting
 
