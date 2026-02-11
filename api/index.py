@@ -15,10 +15,13 @@ if backend_path not in sys.path:
 try:
     from app.db.session import init_db
     # Initialize database tables (idempotent)
+    # Note: Demo users will be seeded lazily on first login request
     init_db()
 except Exception as e:
-    # Log but don't fail - database might already be initialized
+    # Log but don't fail - database might already be initialized or connection might fail
     print(f"[DB Init] Note: {e}")
+    import traceback
+    traceback.print_exc()
 
 # Import FastAPI app and wrap with Mangum
 from mangum import Mangum

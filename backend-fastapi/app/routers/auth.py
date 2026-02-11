@@ -108,6 +108,69 @@ def register(payload: RegisterIn, session: Session = Depends(get_session)):
 
 @router.post("/login", response_model=TokenResponse)
 def login(payload: LoginIn, session: Session = Depends(get_session)):
+    # Ensure database is initialized and seeded (lazy initialization for serverless)
+    try:
+        from app.db.session import engine
+        from sqlmodel import Session as DBSession
+        
+        # Check if database is empty and seed demo users
+        with DBSession(engine) as seed_session:
+            any_user = seed_session.exec(select(User).limit(1)).first()
+            if not any_user:
+                # Seed demo users matching the frontend mock credentials
+                student = User(
+                    role="student",
+                    name="Demo Student",
+                    email="student@test.com",
+                    phone="+91-9000000001",
+                    password_hash=hash_password("student123"),
+                )
+                parent = User(
+                    role="parent",
+                    name="Demo Parent",
+                    email="parent@test.com",
+                    phone="+91-9000000002",
+                    password_hash=hash_password("parent123"),
+                )
+                admin = User(
+                    role="admin",
+                    name="Demo Warden",
+                    email="warden@test.com",
+                    phone="+91-9000000003",
+                    password_hash=hash_password("warden123"),
+                )
+                security = User(
+                    role="security",
+                    name="Demo Security",
+                    email="security@test.com",
+                    phone="+91-9000000004",
+                    password_hash=hash_password("security123"),
+                )
+                
+                seed_session.add(student)
+                seed_session.add(parent)
+                seed_session.add(admin)
+                seed_session.add(security)
+                seed_session.commit()
+                seed_session.refresh(student)
+                seed_session.refresh(parent)
+                
+                seed_session.add(Parent(user_id=parent.id, student_id=student.id, relationship="Parent"))
+                seed_session.add(
+                    Student(
+                        user_id=student.id,
+                        roll_no="S-001",
+                        hostel_name="Block A",
+                        room_no="A-101",
+                        branch="CSE",
+                        semester=3,
+                    )
+                )
+                seed_session.commit()
+    except Exception as e:
+        # Log but continue - seeding might fail if already done or DB issue
+        print(f"[Login] Seeding check failed (may be OK): {e}")
+    
     user = session.exec(select(User).where(User.email == str(payload.email))).first()
     if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
