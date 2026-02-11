@@ -10,14 +10,14 @@ def get_env(key: str, default: str | None = None) -> str | None:
 
 # Check for DATABASE_URL first, then POSTGRES_URL (Vercel/Neon compatibility)
 _raw = get_env("DATABASE_URL") or get_env("POSTGRES_URL", "sqlite:///./dev.db")
-# Use psycopg3 driver for PostgreSQL (Neon often gives postgresql://)
-# SQLAlchemy 2.0+ uses psycopg3 when URL is postgresql+psycopg://
+# Ensure PostgreSQL URLs use psycopg2 driver (most compatible with SQLAlchemy 2.0)
+# Neon/Vercel gives postgresql:// which SQLAlchemy interprets as psycopg2
 if _raw.startswith("postgresql://") and not _raw.startswith("postgresql+"):
-    # Convert postgresql:// to postgresql+psycopg:// for psycopg3
-    _raw = _raw.replace("postgresql://", "postgresql+psycopg://", 1)
-elif _raw.startswith("postgresql+psycopg2"):
-    # If somehow psycopg2 is specified, convert to psycopg3
-    _raw = _raw.replace("postgresql+psycopg2://", "postgresql+psycopg://", 1)
+    # Keep as postgresql:// (SQLAlchemy will use psycopg2)
+    pass
+elif _raw.startswith("postgresql+psycopg://"):
+    # Convert psycopg3 URL to psycopg2 for compatibility
+    _raw = _raw.replace("postgresql+psycopg://", "postgresql+psycopg2://", 1)
 DATABASE_URL = _raw
 JWT_SECRET = get_env("JWT_SECRET", "change-me")
 JWT_EXPIRE_MINUTES = int(get_env("JWT_EXPIRE_MINUTES", "10080"))  # 7 days
