@@ -277,12 +277,38 @@ All paths are under `http://localhost:5002/api`.
 
 ---
 
+## 🚀 Deployment
+
+### Option 1: Vercel (Recommended - Monolithic)
+
+Deploy everything (frontend + backend) to Vercel in one go:
+
+1. **Set up PostgreSQL database** (Vercel Postgres, Supabase, or Railway)
+2. **Configure environment variables** in Vercel dashboard:
+   - `DATABASE_URL` (PostgreSQL connection string - **required**)
+   - `JWT_SECRET` (strong random secret - **required**)
+   - `ML_SERVICE_URL` (optional - if ML service deployed separately)
+3. **Deploy**: `vercel` or connect GitHub repo
+
+**See `VERCEL_DEPLOY.md` for detailed instructions.**
+
+### Option 2: Separate Services
+
+- **Frontend**: Vercel (static site)
+- **Backend**: Railway/Render (FastAPI)
+- **ML Service**: Railway/Render (separate FastAPI)
+- **Database**: PostgreSQL (Vercel Postgres, Supabase, Railway)
+
+**See `DEPLOYMENT.md` for multi-service deployment guide.**
+
+---
+
 ## 📌 Notes
 
 - This repo is optimized for **local development and demonstration**:
   - SQLite for simplicity (swap for Postgres/MySQL for production).
   - CORS wide open (`allow_origins=["*"]`) – tighten for production.
-- The legacy Node.js + Mongo implementation has been superseded by this stack.
+  - The legacy Node.js + Mongo implementation has been superseded by this stack.
 
 
 **More help:** Check documentation files above or see `ML_INTEGRATION_GUIDE.md` → Troubleshooting

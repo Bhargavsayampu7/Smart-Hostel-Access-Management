@@ -1,51 +1,50 @@
-# Node.js
+# Dependencies
 node_modules/
-npm-debug.log
-yarn-error.log
-package-lock.json
+backend-fastapi/.venv/
+backend-fastapi/__pycache__/
+backend-fastapi/**/__pycache__/
+ml-service/__pycache__/
+ml-service/**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
-venv/
+# Database
+backend-fastapi/dev.db
+backend-fastapi/*.db
+*.sqlite
+*.sqlite3
 
-# Logs
-logs
-*.log
-backend.log
-ml-service.log
-
-# Environment variables
+# Environment
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*.local
+
+# Build outputs
+frontend/dist/
+frontend/build/
+*.log
 
 # IDE
-.idea/
 .vscode/
+.idea/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Vercel
+.vercel
+
+# ML artifacts (keep models but ignore temp files)
+ml-service/plots/*.png
+ml-service/plots/*.jpg
+*.pkl.tmp
+
+# Python
+*.egg-info/
+dist/
+build/

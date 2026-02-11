@@ -1,0 +1,47 @@
+# Ignore files that shouldn't be deployed to Vercel
+
+# Python virtual environments
+**/.venv/
+**/venv/
+**/__pycache__/
+
+# Node modules (will be installed during build)
+node_modules/
+
+# Development databases
+*.db
+*.sqlite
+*.sqlite3
+dev.db
+
+# Environment files (use Vercel env vars instead)
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts (will be regenerated)
+dist/
+build/
+
+# ML training artifacts (keep models, ignore temp files)
+ml-service/plots/
+*.pkl.tmp
+
+# Git
+.git/
+.gitignore
+
+# Documentation (optional - can be included)
+docs/
+*.md
+!README.md

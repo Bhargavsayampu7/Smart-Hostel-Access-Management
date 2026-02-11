@@ -1,9 +1,11 @@
 import axios from 'axios';
 
 // Migrated stack (FastAPI) default:
-// - Backend: http://localhost:5002
+// - Development: http://localhost:5002
+// - Production (Vercel): /api (relative path)
 // You can override via Vite env: VITE_API_BASE_URL
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5002/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+    (import.meta.env.PROD ? '/api' : 'http://localhost:5002/api');
 
 const api = axios.create({
     baseURL: API_BASE_URL,
