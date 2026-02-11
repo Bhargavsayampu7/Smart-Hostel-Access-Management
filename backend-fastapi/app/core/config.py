@@ -8,7 +8,8 @@ def get_env(key: str, default: str | None = None) -> str | None:
     return value
 
 
-DATABASE_URL = get_env("DATABASE_URL", "sqlite:///./dev.db")
+# Check for DATABASE_URL first, then POSTGRES_URL (Vercel compatibility)
+DATABASE_URL = get_env("DATABASE_URL") or get_env("POSTGRES_URL", "sqlite:///./dev.db")
 JWT_SECRET = get_env("JWT_SECRET", "change-me")
 JWT_EXPIRE_MINUTES = int(get_env("JWT_EXPIRE_MINUTES", "10080"))  # 7 days
 
