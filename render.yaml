@@ -2,16 +2,15 @@
 # Deploy all services with: render blueprint deploy
 # Or connect this repo to Render and it will auto-detect this file
 
-services:
+databases:
   # PostgreSQL Database
-  - type: pserv
-    name: hostel-db
+  - name: hostel-db
     plan: free
-    region: oregon
     databaseName: hostel_db
-    databaseUser: hostel_user
-    ipAllowList: []  # Allow all IPs (required for free tier)
+    user: hostel_user
+    region: oregon
 
+services:
   # Backend FastAPI Service
   - type: web
     name: hostel-backend
@@ -29,15 +28,20 @@ services:
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
-        sync: false
       - key: ML_API_URL
-        value: https://hostel-ml.onrender.com
+        fromService:
+          type: web
+          name: hostel-ml
+          property: host
       - key: CORS_ORIGINS
-        value: https://hostel-frontend.onrender.com
+        fromService:
+          type: web
+          name: hostel-frontend
+          property: host
       - key: ENVIRONMENT
         value: production
       - key: USE_ML_PREDICTION
-        value: true
+        value: "true"
     healthCheckPath: /api/health
 
   # ML Service
@@ -69,7 +73,10 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://hostel-backend.onrender.com/api
+        fromService:
+          type: web
+          name: hostel-backend
+          property: host
     routes:
       - type: rewrite
         source: /*
