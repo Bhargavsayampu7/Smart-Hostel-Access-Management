@@ -18,10 +18,10 @@ if cors_origins_str:
 else:
     # Development: allow common local development ports
     cors_origins = ["http://localhost:5173", "http://localhost:3000", "http://localhost:5002"]
-    # In production, CORS_ORIGINS MUST be set explicitly
+    # In production, if CORS_ORIGINS not set, allow all (temporary fix)
     if os.getenv("ENVIRONMENT") == "production":
-        print("WARNING: CORS_ORIGINS not set in production. Using empty list.")
-        cors_origins = []
+        print("WARNING: CORS_ORIGINS not set in production. Allowing all origins temporarily.")
+        cors_origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
