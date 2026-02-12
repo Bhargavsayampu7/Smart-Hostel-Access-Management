@@ -1,32 +1,35 @@
 """
-Vercel serverless function wrapper for FastAPI backend.
-This file handles all /api/* routes on Vercel.
-"""
-import sys
-import os
+Vercel entrypoint for the FastAPI backend.
 
-# Add backend-fastapi to Python path
-backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'backend-fastapi'))
+The Python runtime on Vercel can run ASGI apps directly.
+We just need to expose a module-level `app` variable.
+"""
+
+import os
+import sys
+
+# Add backend-fastapi to Python path so `app.main` can be imported
+backend_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "backend-fastapi")
+)
 if backend_path not in sys.path:
     sys.path.insert(0, backend_path)
 
-# Initialize database on first import (for Vercel serverless)
-# Since Mangum disables lifespan events, we need to initialize manually
+# Best-effort DB initialization (tables only). Demo users are seeded lazily
+# inside the auth router on first login.
 try:
     from app.db.session import init_db
-    # Initialize database tables (idempotent)
-    # Note: Demo users will be seeded lazily on first login request
+
     init_db()
-except Exception as e:
-    # Log but don't fail - database might already be initialized or connection might fail
+except Exception as e:  # pragma: no cover - defensive log only
     print(f"[DB Init] Note: {e}")
-    import traceback
-    traceback.print_exc()
+    try:
+        import traceback
 
-# Import FastAPI app and wrap with Mangum
-from mangum import Mangum
-from app.main import app
+        traceback.print_exc()
+    except Exception:
+        pass
 
-# Wrap FastAPI app with Mangum for AWS Lambda/Vercel compatibility
-# lifespan="off" disables FastAPI lifespan events (not supported in serverless)
-handler = Mangum(app, lifespan="off")
+# Expose the FastAPI ASGI application for Vercel's Python runtime
+from app.main import app  # noqa: E402,F401
+
