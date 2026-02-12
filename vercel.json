@@ -2,21 +2,24 @@
   "version": 2,
   "buildCommand": "cd frontend && npm install --legacy-peer-deps && npm run build",
   "outputDirectory": "frontend/dist",
-  "installCommand": "cd frontend && npm install --legacy-peer-deps",
+  "installCommand": "pip install -r requirements.txt && cd frontend && npm install --legacy-peer-deps",
   "framework": null,
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/index.py"
-    },
+  "headers": [
     {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; object-src 'self'; base-uri 'self';"
+        }
+      ]
     }
   ],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.py" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
   "functions": {
-    "api/index.py": {
-      "includeFiles": "backend-fastapi/**"
-    }
+    "api/index.py": { "includeFiles": "backend-fastapi/**" }
   }
 }
