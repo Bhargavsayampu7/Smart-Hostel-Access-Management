@@ -15,21 +15,6 @@ backend_path = os.path.abspath(
 if backend_path not in sys.path:
     sys.path.insert(0, backend_path)
 
-# Best-effort DB initialization (tables only). Demo users are seeded lazily
-# inside the auth router on first login.
-try:
-    from app.db.session import init_db
-
-    init_db()
-except Exception as e:  # pragma: no cover - defensive log only
-    print(f"[DB Init] Note: {e}")
-    try:
-        import traceback
-
-        traceback.print_exc()
-    except Exception:
-        pass
-
 # Expose the FastAPI ASGI application for Vercel's Python runtime
+# Database initialization happens lazily on first request
 from app.main import app  # noqa: E402,F401
-
