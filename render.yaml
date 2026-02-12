@@ -16,7 +16,7 @@ services:
     name: hostel-backend
     runtime: python
     region: oregon
-    plan: free
+    plan: starter
     branch: main
     rootDir: backend-fastapi
     buildCommand: pip install -r requirements.txt
@@ -49,7 +49,7 @@ services:
     name: hostel-ml
     runtime: python
     region: oregon
-    plan: free
+    plan: starter
     branch: main
     rootDir: ml-service
     buildCommand: pip install -r requirements.txt
@@ -65,7 +65,7 @@ services:
   - type: web
     name: hostel-frontend
     runtime: static
-    plan: free
+    plan: starter
     branch: main
     rootDir: frontend
     buildCommand: npm install && npm run build
