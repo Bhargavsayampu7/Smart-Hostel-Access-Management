@@ -65,7 +65,6 @@ services:
   - type: web
     name: hostel-frontend
     runtime: static
-    region: oregon
     plan: free
     branch: main
     rootDir: frontend
