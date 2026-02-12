@@ -1,0 +1,44 @@
+# Netlify configuration for Smart Hostel Access Management
+# This file configures build settings and serverless functions
+
+[build]
+  # Frontend build settings
+  base = "frontend"
+  publish = "frontend/dist"
+  command = "npm install && npm run build"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Serverless Functions (Backend API)
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Redirects and rewrites
+[[redirects]]
+  # API routes to serverless functions
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  # SPA fallback - all other routes to index.html
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers for security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Environment variables (set in Netlify dashboard)
+# DATABASE_URL = your-postgresql-connection-string
+# JWT_SECRET = your-jwt-secret
+# ML_API_URL = optional-ml-service-url
+# VITE_API_BASE_URL = /api
