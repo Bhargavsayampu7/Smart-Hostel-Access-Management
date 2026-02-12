@@ -2,7 +2,7 @@
   "version": 2,
   "buildCommand": "cd frontend && npm install --legacy-peer-deps && npm run build",
   "outputDirectory": "frontend/dist",
-  "installCommand": "uv pip install --system -r requirements.txt && cd frontend && npm install --legacy-peer-deps",
+  "installCommand": "cd frontend && npm install --legacy-peer-deps",
   "framework": null,
   "headers": [
     {
