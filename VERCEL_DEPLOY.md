@@ -2,6 +2,12 @@
 
 This guide covers deploying the **entire** Smart Hostel Access Management system to Vercel (frontend + backend).
 
+> **⚠️ IMPORTANT FIXES APPLIED**: This guide has been updated with fixes for:
+> - PostgreSQL driver mismatch (psycopg3 vs psycopg2)
+> - Health endpoint routing issues
+> - Missing dependencies in api/requirements.txt
+> - Environment variable configuration
+
 ## Architecture
 
 - **Frontend**: React/Vite app → Static site on Vercel
@@ -16,15 +22,21 @@ This guide covers deploying the **entire** Smart Hostel Access Management system
 3. GitHub repo connected (optional, but recommended)
 4. **PostgreSQL database** (Vercel Postgres, Supabase, Railway, or Render)
 
+> **✅ FIXED**: `api/requirements.txt` now includes correct PostgreSQL driver (`psycopg[binary]==3.2.10`)
+
 ## Step 1: Set Up PostgreSQL Database
 
 **Option A: Vercel Postgres (Recommended)**
 1. In Vercel dashboard → Storage → Create Database → Postgres
 2. Copy the connection string (will be used as `DATABASE_URL`)
+3. **Important**: Vercel provides `POSTGRES_URL` - backend now auto-detects this
 
 **Option B: External PostgreSQL**
 - Use Supabase, Railway, or Render PostgreSQL
-- Get connection string: `postgresql+psycopg://user:pass@host:5432/dbname`
+- Get connection string: `postgresql://user:pass@host:5432/dbname`
+- Backend will auto-convert to `postgresql+psycopg://` format
+
+> **✅ FIXED**: Backend now handles multiple PostgreSQL URL formats (`DATABASE_URL`, `POSTGRES_URL`, `POSTGRESQL_URL`)
 
 ## Step 2: Set Environment Variables
 
@@ -32,7 +44,8 @@ In Vercel dashboard → Project Settings → Environment Variables, add:
 
 ```bash
 # Database (REQUIRED - PostgreSQL only, not SQLite)
-DATABASE_URL=postgresql+psycopg://user:pass@host:5432/dbname
+DATABASE_URL=postgresql://user:pass@host:5432/dbname
+# Or if using Vercel Postgres, it auto-sets POSTGRES_URL
 
 # JWT Secret (REQUIRED - change this!)
 JWT_SECRET=your-super-secret-key-change-this-in-production-min-32-chars
@@ -40,6 +53,12 @@ JWT_SECRET=your-super-secret-key-change-this-in-production-min-32-chars
 # ML Service (Optional - if deploying separately)
 ML_SERVICE_URL=https://your-ml-service.railway.app
 # Or leave empty/unset to use fallback mock predictions
+
+# CORS Origins (REQUIRED for production)
+CORS_ORIGINS=https://your-project.vercel.app
+
+# Environment
+ENVIRONMENT=production
 
 # Frontend API URL (Optional - defaults to /api in production)
 VITE_API_BASE_URL=/api
@@ -49,6 +68,8 @@ VITE_API_BASE_URL=/api
 - SQLite (`sqlite:///./dev.db`) **will NOT work** on Vercel serverless functions
 - You **must** use PostgreSQL or another external database
 - Database tables will be auto-created on first API request (via `init_db()`)
+
+> **✅ FIXED**: Backend now uses environment-based CORS instead of `allow_origins=["*"]`
 
 ## Step 3: Deploy ML Service (Optional but Recommended)
 
@@ -125,6 +146,9 @@ EOF
 1. **Frontend**: Visit `https://your-project.vercel.app`
 2. **Backend API**: Visit `https://your-project.vercel.app/api/docs` (FastAPI Swagger UI)
 3. **Health Check**: `https://your-project.vercel.app/api/health`
+   - Should return: `{"status":"ok","service":"hostel-backend","version":"0.1.0"}`
+
+> **✅ FIXED**: Health endpoint now available at both `/health` and `/api/health` for compatibility
 
 ## Project Structure for Vercel
 

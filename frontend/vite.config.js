@@ -7,10 +7,27 @@ export default defineConfig({
     server: {
         proxy: {
             '/api': {
-                target: 'http://localhost:5001',
+                target: process.env.VITE_API_BASE_URL || 'http://localhost:5002',
                 changeOrigin: true,
                 secure: false,
             }
         }
+    },
+    build: {
+        outDir: 'dist',
+        sourcemap: false,
+        // Optimize chunk sizes
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+                    'chart-vendor': ['recharts'],
+                    'qr-vendor': ['qrcode', 'react-qr-reader'],
+                    'utils': ['axios', 'lucide-react']
+                }
+            }
+        },
+        // Increase chunk size warning limit
+        chunkSizeWarningLimit: 1000
     }
 })
