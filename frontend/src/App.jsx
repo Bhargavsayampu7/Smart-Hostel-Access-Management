@@ -7,7 +7,6 @@ import StudentDashboard from './pages/StudentDashboard';
 import ParentDashboard from './pages/ParentDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import SecurityDashboard from './pages/SecurityDashboard';
-import RoleSelect from './pages/RoleSelect';
 import PassHistory from './pages/PassHistory';
 
 // Protected Route Wrapper
@@ -30,7 +29,7 @@ function App() {
         <AuthProvider>
             <Router>
                 <Routes>
-                    <Route path="/" element={<RoleSelect />} />
+                    <Route path="/" element={<Navigate to="/login" replace />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
 
