@@ -3,12 +3,20 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 from typing import List
 
+# ── Import ALL models before init_db so SQLModel.metadata.create_all knows them ──
+import app.models  # noqa: F401  (registers all SQLModel table classes)
+
+from app.db.session import init_db
 from app.routers import auth, passes, approvals, qr, scan, location
 from app.routers import requests_compat, students_compat, parents_compat, admin_compat
 from app.routers import risk
 
 
 app = FastAPI(title="Hostel Outpass Platform API", version="0.1.0")
+
+# ── Create all DB tables on startup (safe even if tables already exist) ──
+init_db()
+
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
 # Open to all origins — this is a public demo backend on Render.
