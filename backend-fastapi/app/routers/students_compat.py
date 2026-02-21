@@ -13,12 +13,28 @@ from app.models import Pass, ScanEvent, Student, StudentBehavioralStats, User
 router = APIRouter()
 
 
+
+def _parse_dt(val) -> datetime | None:
+    """Return a naive datetime from either a datetime object or an ISO string."""
+    if val is None:
+        return None
+    if isinstance(val, datetime):
+        return val.replace(tzinfo=None)
+    try:
+        return datetime.fromisoformat(str(val)).replace(tzinfo=None)
+    except Exception:
+        return None
+
+
 def _is_active_pass(p: Pass, now: datetime) -> bool:
     if p.status != "approved":
         return False
     if p.returned_at is not None:
         return False
-    return p.to_time.replace(tzinfo=None) > now.replace(tzinfo=None)
+    to_time = _parse_dt(p.to_time)
+    if to_time is None:
+        return False
+    return to_time > now.replace(tzinfo=None)
 
 
 @router.get("/profile")
