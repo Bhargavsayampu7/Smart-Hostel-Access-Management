@@ -10,18 +10,23 @@ from app.routers import risk
 
 app = FastAPI(title="Hostel Outpass Platform API", version="0.1.0")
 
-# Environment-based CORS configuration
+# ── CORS ─────────────────────────────────────────────────────────────────────
+# Known frontend deployments always allowed (safe to hard-code — they're public)
+KNOWN_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:4173",
+    "http://localhost:3000",
+    "http://localhost:5002",
+    "https://remarkable-creponne-22cc7b.netlify.app",  # Netlify deploy
+]
+
 cors_origins_str = os.getenv("CORS_ORIGINS", "")
 if cors_origins_str:
-    # Production: use explicit origins from environment
-    cors_origins: List[str] = [origin.strip() for origin in cors_origins_str.split(",")]
+    extra = [o.strip() for o in cors_origins_str.split(",") if o.strip()]
+    cors_origins: List[str] = list(dict.fromkeys(KNOWN_ORIGINS + extra))
 else:
-    # Development: allow common local development ports
-    cors_origins = ["http://localhost:5173", "http://localhost:5174", "http://localhost:4173", "http://localhost:3000", "http://localhost:5002"]
-    # In production, if CORS_ORIGINS not set, allow all (temporary fix)
-    if os.getenv("ENVIRONMENT") == "production":
-        print("WARNING: CORS_ORIGINS not set in production. Allowing all origins temporarily.")
-        cors_origins = ["*"]
+    cors_origins = KNOWN_ORIGINS
 
 app.add_middleware(
     CORSMiddleware,
