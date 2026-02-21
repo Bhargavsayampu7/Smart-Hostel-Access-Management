@@ -11,27 +11,12 @@ from app.routers import risk
 app = FastAPI(title="Hostel Outpass Platform API", version="0.1.0")
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
-# Known frontend deployments always allowed (safe to hard-code — they're public)
-KNOWN_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:4173",
-    "http://localhost:3000",
-    "http://localhost:5002",
-    "https://remarkable-creponne-22cc7b.netlify.app",  # Netlify deploy
-]
-
-cors_origins_str = os.getenv("CORS_ORIGINS", "")
-if cors_origins_str:
-    extra = [o.strip() for o in cors_origins_str.split(",") if o.strip()]
-    cors_origins: List[str] = list(dict.fromkeys(KNOWN_ORIGINS + extra))
-else:
-    cors_origins = KNOWN_ORIGINS
-
+# Open to all origins — this is a public demo backend on Render.
+# If you add auth-sensitive endpoints later, restrict to specific origins.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,   # must be False when allow_origins=["*"]
     allow_methods=["*"],
     allow_headers=["*"],
 )
