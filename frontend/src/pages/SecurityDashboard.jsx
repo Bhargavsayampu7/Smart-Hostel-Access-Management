@@ -147,8 +147,8 @@ function ScanCard({ entry, onClick, active }) {
                     )}
                     {allow && entry.message && (
                         <div className={`mt-1.5 px-1.5 py-0.5 text-[10px] font-medium rounded border ${entry.message.includes('violation')
-                                ? 'bg-orange-50 text-orange-600 border-orange-200'
-                                : 'bg-green-50 text-green-600 border-green-200'
+                            ? 'bg-orange-50 text-orange-600 border-orange-200'
+                            : 'bg-green-50 text-green-600 border-green-200'
                             }`}>
                             {entry.message}
                         </div>
@@ -265,33 +265,35 @@ const SecurityDashboard = () => {
             <div className="bg-[#F7F9F9] text-slate-900 min-h-screen flex flex-col overflow-hidden" style={{ fontFamily: "'Public Sans', sans-serif" }}>
 
                 {/* ── Header ── */}
-                <header className="h-16 flex items-center justify-between px-6 border-b border-[#E0E6E6] bg-white shrink-0 z-20 shadow-sm">
-                    <div className="flex items-center gap-4">
+                <header className="h-auto min-h-[64px] flex flex-wrap items-center justify-between px-4 md:px-6 py-2 border-b border-[#E0E6E6] bg-white shrink-0 z-20 shadow-sm gap-2">
+                    <div className="flex items-center gap-2 md:gap-4">
                         <div className="flex items-center gap-2">
-                            <span className="material-icons-round text-[#4CAF50] text-2xl">security</span>
-                            <h1 className="text-xl font-bold tracking-tight text-slate-800">
+                            <span className="material-icons-round text-[#4CAF50] text-xl md:text-2xl">security</span>
+                            <h1 className="text-base md:text-xl font-bold tracking-tight text-slate-800">
                                 GATEKEEPER <span className="text-[#4CAF50] font-normal">OS</span>
                             </h1>
                         </div>
-                        <div className="h-6 w-px bg-slate-200 mx-2" />
-                        <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <div className="hidden sm:flex h-6 w-px bg-slate-200 mx-2" />
+                        <div className="hidden sm:flex items-center gap-2 text-sm text-slate-500">
                             <span className="material-icons-round text-base">place</span>
                             <span className="font-medium tracking-wide text-slate-700">NORTH GATE - TERMINAL 01</span>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
-                        {/* System online status */}
-                        <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded border border-slate-200">
+                    <div className="flex items-center gap-2 md:gap-6">
+                        <div className="hidden md:flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded border border-slate-200">
                             <div className="w-2 h-2 rounded-full bg-[#4CAF50] live-indicator" style={{ boxShadow: '0 0 8px #4CAF50' }} />
                             <span className="text-[#4CAF50] font-mono font-bold text-sm tracking-wider">SYSTEM ONLINE</span>
                         </div>
+                        <div className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-[#4CAF50] md:hidden" style={{ boxShadow: '0 0 8px #4CAF50' }} />
+                        </div>
 
-                        <LiveClock />
+                        <div className="hidden md:block"><LiveClock /></div>
 
-                        <button className="w-10 h-10 flex items-center justify-center rounded hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-800 relative">
-                            <span className="material-icons-round">notifications</span>
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-[#4CAF50] rounded-full border border-white" />
+                        <button className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-800 relative">
+                            <span className="material-icons-round text-base md:text-xl">notifications</span>
+                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#4CAF50] rounded-full border border-white" />
                         </button>
 
                         <button
@@ -305,13 +307,13 @@ const SecurityDashboard = () => {
                 </header>
 
                 {/* ── Main Content ── */}
-                <main className="flex-1 flex h-[calc(100vh-64px)] overflow-hidden">
+                <main className="flex-1 flex flex-col md:flex-row overflow-auto md:overflow-hidden">
 
                     {/* ── Left: Camera + Input + Result ── */}
-                    <section className="flex-1 flex flex-col p-6 gap-6 bg-[#F7F9F9] overflow-y-auto">
+                    <section className="flex-1 flex flex-col p-4 md:p-6 gap-4 md:gap-6 bg-[#F7F9F9] overflow-y-auto min-h-0">
 
                         {/* Camera feed panel */}
-                        <div className="flex-1 flex flex-col bg-white rounded-lg border border-[#E0E6E6] overflow-hidden relative shadow-md min-h-[320px]">
+                        <div className="flex flex-col bg-white rounded-lg border border-[#E0E6E6] overflow-hidden relative shadow-md" style={{ minHeight: '280px' }}>
                             {/* Camera toolbar */}
                             <div className="bg-white/80 backdrop-blur absolute top-0 w-full p-3 flex justify-between items-center z-10 border-b border-[#E0E6E6]">
                                 <span className="text-xs font-mono text-[#4CAF50] flex items-center gap-2 font-bold">
@@ -378,9 +380,9 @@ const SecurityDashboard = () => {
                             <div className="bg-white rounded border border-[#E0E6E6] p-1 relative overflow-hidden shadow-sm">
                                 {/* Coloured left stripe */}
                                 <div className={`absolute top-0 left-0 w-1 h-full ${isAllow ? 'bg-[#4CAF50]' : 'bg-[#D94F4F]'}`} />
-                                <div className="flex items-stretch gap-6 p-4">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-stretch gap-4 p-4">
                                     {/* Avatar */}
-                                    <div className="w-24 h-24 rounded bg-slate-100 shrink-0 border border-slate-200 overflow-hidden relative shadow-inner flex items-center justify-center text-slate-400 font-bold text-3xl">
+                                    <div className="w-16 h-16 sm:w-24 sm:h-24 rounded bg-slate-100 shrink-0 border border-slate-200 overflow-hidden relative shadow-inner flex items-center justify-center text-slate-400 font-bold text-2xl sm:text-3xl">
                                         {displayEntry.name?.[0]?.toUpperCase() || '?'}
                                         <div className={`absolute bottom-0 inset-x-0 ${isAllow ? 'bg-[#4CAF50]' : 'bg-[#D94F4F]'} text-white text-[10px] text-center py-0.5 font-mono font-bold tracking-wider`}>
                                             {isAllow ? 'LIVE SCAN' : 'DENIED'}
@@ -405,7 +407,7 @@ const SecurityDashboard = () => {
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-3 gap-4 mt-4 border-t border-slate-100 pt-3">
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3 border-t border-slate-100 pt-3">
                                             <div>
                                                 <span className="text-[10px] uppercase text-slate-400 font-bold tracking-wider block mb-0.5">Room No.</span>
                                                 <span className="text-slate-800 font-mono text-sm font-medium">{displayEntry.room}</span>
@@ -432,7 +434,7 @@ const SecurityDashboard = () => {
                     </section>
 
                     {/* ── Right Sidebar: Recent Scans ── */}
-                    <aside className="w-96 bg-white border-l border-[#E0E6E6] flex flex-col shrink-0 shadow-sm">
+                    <aside className="w-full md:w-80 lg:w-96 bg-white border-t md:border-t-0 md:border-l border-[#E0E6E6] flex flex-col shrink-0 shadow-sm max-h-[40vh] md:max-h-none">
                         {/* Header */}
                         <div className="p-5 border-b border-[#E0E6E6] flex justify-between items-center bg-white">
                             <h3 className="font-bold text-slate-700 uppercase tracking-wider text-sm flex items-center gap-2">

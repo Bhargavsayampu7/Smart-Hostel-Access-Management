@@ -80,7 +80,8 @@ export default function Login() {
             {/* ── HEADER ── */}
             <header style={{
                 position: 'absolute', top: 0, left: 0, right: 0,
-                padding: '24px 48px', display: 'flex', justifyContent: 'space-between',
+                padding: '16px 24px',
+                display: 'flex', justifyContent: 'space-between',
                 alignItems: 'center', zIndex: 20,
             }}>
                 {/* Logo */}
@@ -99,7 +100,7 @@ export default function Login() {
                     </span>
                 </div>
                 {/* Nav */}
-                <nav style={{ display: 'flex', gap: 24 }}>
+                <nav className="hidden sm:flex" style={{ gap: 24, display: 'flex' }}>
                     {['System Status', 'Documentation', 'Support'].map(n => (
                         <a key={n} href="#" style={{
                             fontSize: 13, fontWeight: 500, color: '#64748b',
@@ -155,11 +156,9 @@ export default function Login() {
                 </div>
 
                 {/* Two-column grid */}
-                <div style={{
+                <div className="login-grid" style={{
                     position: 'relative', zIndex: 10, width: '100%',
-                    maxWidth: 1200, margin: '0 auto', padding: '100px 48px 60px',
-                    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64,
-                    alignItems: 'center',
+                    maxWidth: 1200, margin: '0 auto', padding: '80px 24px 60px',
                 }}>
 
                     {/* ── LEFT: marketing ── */}

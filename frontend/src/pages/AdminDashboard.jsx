@@ -70,6 +70,7 @@ const AdminDashboard = () => {
     const [queue, setQueue] = useState([]);
     const [students, setStudents] = useState([]);
     const [analytics, setAnalytics] = useState(null);
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
@@ -158,8 +159,13 @@ const AdminDashboard = () => {
 
             <div className="flex h-screen w-full overflow-hidden bg-[#F7F9F9]" style={{ fontFamily: "'Public Sans', sans-serif", color: '#2D3436' }}>
 
+                {/* Mobile drawer backdrop */}
+                {mobileNavOpen && (
+                    <div className="fixed inset-0 bg-black/40 z-30 md:hidden" onClick={() => setMobileNavOpen(false)} />
+                )}
+
                 {/* ── Sidebar ── */}
-                <aside className="hidden w-64 flex-col border-r border-[#E0E6E6] bg-white md:flex shrink-0">
+                <aside className={`fixed md:static inset-y-0 left-0 z-40 w-64 flex flex-col border-r border-[#E0E6E6] bg-white shrink-0 transform transition-transform duration-300 md:translate-x-0 ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}`}>
 
                     {/* Brand */}
                     <div className="flex h-16 items-center gap-3 border-b border-[#E0E6E6] px-6">
@@ -219,7 +225,7 @@ const AdminDashboard = () => {
                     {/* Top header */}
                     <header className="flex h-16 items-center justify-between border-b border-[#E0E6E6] bg-white px-6 py-4 shrink-0">
                         <div className="flex items-center gap-4">
-                            <button className="md:hidden text-[#636E72]">
+                            <button className="md:hidden text-[#636E72] p-1" onClick={() => setMobileNavOpen(true)}>
                                 <span className="material-symbols-outlined">menu</span>
                             </button>
                             <div>
@@ -230,7 +236,7 @@ const AdminDashboard = () => {
                             </div>
                         </div>
                         <div className="flex items-center gap-4">
-                            <div className="hidden items-center gap-2 rounded bg-[#F7F9F9] border border-[#E0E6E6] px-3 py-1.5 md:flex focus-within:border-[#4CAF50]/50 transition-colors">
+                            <div className="flex items-center gap-2 rounded bg-[#F7F9F9] border border-[#E0E6E6] px-3 py-1.5 focus-within:border-[#4CAF50]/50 transition-colors">
                                 <span className="material-symbols-outlined text-sm text-[#636E72]">search</span>
                                 <input
                                     className="bg-transparent border-none p-0 text-sm text-[#2D3436] placeholder-[#636E72] focus:ring-0 w-48 font-mono outline-none"

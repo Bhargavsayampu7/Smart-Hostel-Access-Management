@@ -68,6 +68,7 @@ const ParentDashboard = () => {
     const [lastLocation, setLastLocation] = useState(null);
     const [activePassId, setActivePassId] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     // Which pending request is shown in the approval card (first by default)
     const [selectedReqIdx, setSelectedReqIdx] = useState(0);
@@ -139,41 +140,57 @@ const ParentDashboard = () => {
             <div className="min-h-screen flex flex-col bg-[#F7F9F9]" style={{ fontFamily: "'DM Sans', sans-serif", color: '#2D3436' }}>
 
                 {/* ── Top Navbar ── */}
-                <header className="w-full border-b border-[#E0E6E6] bg-white px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-                    <div className="flex items-center gap-4">
-                        <span className="material-symbols-outlined text-[#4CAF50] text-3xl">shield_person</span>
-                        <div>
-                            <h1 className="text-[#2D3436] text-lg font-bold tracking-tight uppercase">Parental Oversight Portal</h1>
-                            <p className="text-[#4CAF50] text-xs font-mono tracking-widest uppercase">SECURE CONNECTION ESTABLISHED</p>
+                <header className="w-full border-b border-[#E0E6E6] bg-white px-4 md:px-6 py-3 md:py-4 flex flex-col sticky top-0 z-50">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <span className="material-symbols-outlined text-[#4CAF50] text-2xl md:text-3xl">shield_person</span>
+                            <div>
+                                <h1 className="text-[#2D3436] text-base md:text-lg font-bold tracking-tight uppercase">Parental Oversight Portal</h1>
+                                <p className="text-[#4CAF50] text-[10px] font-mono tracking-widest uppercase">SECURE CONNECTION ESTABLISHED</p>
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="flex items-center gap-6">
-                        {/* Nav links */}
-                        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#636E72]">
-                            <span className="text-[#2D3436] border-b-2 border-[#4CAF50] pb-0.5 cursor-default">DASHBOARD</span>
-                            <a href="#" className="hover:text-[#4CAF50] transition-colors pb-0.5 border-b-2 border-transparent">STUDENTS</a>
-                            <a href="#" className="hover:text-[#4CAF50] transition-colors pb-0.5 border-b-2 border-transparent">HISTORY</a>
-                            <button onClick={handleLogout} className="hover:text-[#4CAF50] transition-colors pb-0.5 border-b-2 border-transparent">LOGOUT</button>
-                        </nav>
+                        <div className="flex items-center gap-3">
+                            {/* Desktop nav - hidden on mobile */}
+                            <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#636E72]">
+                                <span className="text-[#2D3436] border-b-2 border-[#4CAF50] pb-0.5 cursor-default">DASHBOARD</span>
+                                <a href="#" className="hover:text-[#4CAF50] transition-colors pb-0.5 border-b-2 border-transparent">STUDENTS</a>
+                                <a href="#" className="hover:text-[#4CAF50] transition-colors pb-0.5 border-b-2 border-transparent">HISTORY</a>
+                                <button onClick={handleLogout} className="hover:text-[#4CAF50] transition-colors pb-0.5 border-b-2 border-transparent">LOGOUT</button>
+                            </nav>
 
-                        {/* Notification + avatar */}
-                        <div className="flex items-center gap-4 border-l border-[#E0E6E6] pl-6">
-                            <button className="relative text-[#636E72] hover:text-[#2D3436] transition-colors">
-                                <span className="material-symbols-outlined">notifications</span>
-                                {pendingRequests.length > 0 && (
-                                    <span className="absolute top-0 right-0 size-2 bg-[#4CAF50] rounded-full ring-2 ring-white"></span>
-                                )}
-                            </button>
-                            <div className="size-8 rounded bg-[#4CAF50]/10 border border-[#E0E6E6] flex items-center justify-center text-[#4CAF50] font-bold text-sm">
-                                {user?.name?.[0]?.toUpperCase() || 'P'}
+                            {/* Notification + avatar */}
+                            <div className="flex items-center gap-3 md:gap-4 md:border-l md:border-[#E0E6E6] md:pl-6">
+                                <button className="relative text-[#636E72] hover:text-[#2D3436] transition-colors">
+                                    <span className="material-symbols-outlined">notifications</span>
+                                    {pendingRequests.length > 0 && (
+                                        <span className="absolute top-0 right-0 size-2 bg-[#4CAF50] rounded-full ring-2 ring-white"></span>
+                                    )}
+                                </button>
+                                <div className="size-8 rounded bg-[#4CAF50]/10 border border-[#E0E6E6] flex items-center justify-center text-[#4CAF50] font-bold text-sm">
+                                    {user?.name?.[0]?.toUpperCase() || 'P'}
+                                </div>
+                                {/* Hamburger - mobile only */}
+                                <button className="md:hidden text-[#636E72] p-1" onClick={() => setMobileMenuOpen(v => !v)}>
+                                    <span className="material-symbols-outlined">{mobileMenuOpen ? 'close' : 'menu'}</span>
+                                </button>
                             </div>
                         </div>
                     </div>
+
+                    {/* Mobile dropdown nav */}
+                    {mobileMenuOpen && (
+                        <nav className="md:hidden flex flex-col gap-1 pt-3 pb-1 border-t border-[#E0E6E6] mt-3 text-sm font-medium text-[#636E72]">
+                            <span className="text-[#2D3436] font-bold py-2">DASHBOARD</span>
+                            <a href="#" className="hover:text-[#4CAF50] py-2">STUDENTS</a>
+                            <a href="#" className="hover:text-[#4CAF50] py-2">HISTORY</a>
+                            <button onClick={handleLogout} className="text-left hover:text-[#4CAF50] py-2">LOGOUT</button>
+                        </nav>
+                    )}
                 </header>
 
                 {/* ── Main Grid ── */}
-                <main className="flex-1 p-6 md:p-10 w-full max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <main className="flex-1 p-4 md:p-6 lg:p-10 w-full max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
 
                     {/* ── LEFT COLUMN (8/12) ── */}
                     <div className="lg:col-span-8 flex flex-col gap-6">
