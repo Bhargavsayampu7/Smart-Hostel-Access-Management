@@ -1,10 +1,13 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-import os
-from typing import List
+from __future__ import annotations
 
-# ── Import ALL models before init_db so SQLModel.metadata.create_all knows them ──
-import app.models  # noqa: F401  (registers all SQLModel table classes)
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+# ── Import ALL models before init_db so SQLModel.metadata knows every table ──
+import app.models  # noqa: F401
 
 from app.db.session import init_db
 from app.routers import auth, passes, approvals, qr, scan, location
@@ -12,44 +15,71 @@ from app.routers import requests_compat, students_compat, parents_compat, admin_
 from app.routers import risk
 
 
-app = FastAPI(title="Hostel Outpass Platform API", version="0.1.0")
+# ── Lifespan: create DB tables on startup ────────────────────────────────────
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Create all SQLModel tables before the first request (idempotent)."""
+    try:
+        init_db()
+        print("[startup] DB tables ensured ✓")
+    except Exception as exc:
+        print(f"[startup] WARNING: init_db failed: {exc}")
+    yield  # app runs here
 
-# ── Create all DB tables on startup (safe even if tables already exist) ──
-init_db()
 
+# ── App ───────────────────────────────────────────────────────────────────────
+app = FastAPI(
+    title="Hostel Outpass Platform API",
+    version="0.1.0",
+    lifespan=lifespan,
+)
 
-# ── CORS ─────────────────────────────────────────────────────────────────────
-# Open to all origins — this is a public demo backend on Render.
-# If you add auth-sensitive endpoints later, restrict to specific origins.
+# ── CORS ──────────────────────────────────────────────────────────────────────
+# Open to all origins — public demo backend on Render / any CI environment.
+# allow_credentials MUST be False when allow_origins=["*"].
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,   # must be False when allow_origins=["*"]
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 
+# ── Global error handler: inject CORS on 500 so browser shows the real error ──
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "error": str(exc)},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*",
+        },
+    )
+
+
+# ── Routes ────────────────────────────────────────────────────────────────────
 @app.get("/health")
 @app.get("/api/health")
 def health():
-    """Health check endpoint - available at both /health and /api/health for compatibility"""
     return {"status": "ok", "service": "hostel-backend", "version": "0.1.0"}
 
 
+app.include_router(auth.router,      prefix="/api/auth",     tags=["auth"])
+app.include_router(passes.router,    prefix="/api/passes",   tags=["passes"])
+app.include_router(approvals.router, prefix="/api/approvals",tags=["approvals"])
+app.include_router(qr.router,        prefix="/api/qr",       tags=["qr"])
+app.include_router(scan.router,      prefix="/api/scan",     tags=["scan"])
+app.include_router(location.router,  prefix="/api/location", tags=["location"])
+app.include_router(risk.router,      prefix="/api/pass",     tags=["risk"])
 
-app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
-app.include_router(passes.router, prefix="/api/passes", tags=["passes"])
-app.include_router(approvals.router, prefix="/api/approvals", tags=["approvals"])
-app.include_router(qr.router, prefix="/api/qr", tags=["qr"])
-app.include_router(scan.router, prefix="/api/scan", tags=["scan"])
-app.include_router(location.router, prefix="/api/location", tags=["location"])
-app.include_router(risk.router, prefix="/api/pass", tags=["risk"])
-
-# Compatibility endpoints for the existing React pages (mirrors old Node API paths)
+# Compat endpoints matching the React front-end's expected paths
 app.include_router(requests_compat.router, prefix="/api/requests", tags=["compat:requests"])
 app.include_router(students_compat.router, prefix="/api/students", tags=["compat:students"])
-app.include_router(parents_compat.router, prefix="/api/parents", tags=["compat:parents"])
-app.include_router(admin_compat.router, prefix="/api/admin", tags=["compat:admin"])
-
-
+app.include_router(parents_compat.router,  prefix="/api/parents",  tags=["compat:parents"])
+app.include_router(admin_compat.router,    prefix="/api/admin",    tags=["compat:admin"])
