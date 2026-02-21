@@ -11,8 +11,8 @@ const ROLES = [
 
 const FEATURES = [
     { icon: 'monitoring', label: 'Real-time', sub: 'Analytics' },
-    { icon: 'fingerprint', label: 'Biometric', sub: 'Security' },
-    { icon: 'cloud_sync', label: 'Cloud', sub: 'Integration' },
+    { icon: 'qr_code_2', label: 'QR-Based', sub: 'Secure Outpass' },
+    { icon: 'psychology', label: 'ML-Driven', sub: 'Risk Scoring' },
 ];
 
 export default function Login() {

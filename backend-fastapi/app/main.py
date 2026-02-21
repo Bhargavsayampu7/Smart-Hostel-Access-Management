@@ -17,7 +17,7 @@ if cors_origins_str:
     cors_origins: List[str] = [origin.strip() for origin in cors_origins_str.split(",")]
 else:
     # Development: allow common local development ports
-    cors_origins = ["http://localhost:5173", "http://localhost:3000", "http://localhost:5002"]
+    cors_origins = ["http://localhost:5173", "http://localhost:5174", "http://localhost:4173", "http://localhost:3000", "http://localhost:5002"]
     # In production, if CORS_ORIGINS not set, allow all (temporary fix)
     if os.getenv("ENVIRONMENT") == "production":
         print("WARNING: CORS_ORIGINS not set in production. Allowing all origins temporarily.")

@@ -8,7 +8,7 @@ from app.core.config import QR_TOKEN_TTL_MINUTES
 from app.core.security import create_access_token, new_jti, new_nonce, hash_nonce
 from app.db.session import get_session
 from app.deps import require_role
-from app.models import Pass, QRToken, ScanEvent, User
+from app.models import Pass, QRToken, User
 from app.schemas import QRPayloadOut
 
 router = APIRouter()
@@ -25,27 +25,20 @@ def get_qr_for_pass(
         raise HTTPException(status_code=404, detail="Pass not found")
     if p.student_id != user.id:
         raise HTTPException(status_code=403, detail="Access denied")
-    if p.status != "approved":
-        raise HTTPException(status_code=400, detail="Pass is not approved")
-    if p.returned_at is not None:
+
+    # ── Phase from pass.status (state machine) ─────────────────────────────────
+    if p.status == "approved":
+        phase = "out"
+    elif p.status == "out":
+        phase = "in"
+    elif p.status == "returned":
         raise HTTPException(status_code=400, detail="Pass already completed")
+    else:
+        raise HTTPException(status_code=400, detail=f"Pass is not ready for scanning (status={p.status})")
 
     now = datetime.now(timezone.utc)
     expires_at = min(p.to_time.replace(tzinfo=timezone.utc), now + timedelta(minutes=QR_TOKEN_TTL_MINUTES))
 
-    # Determine current phase based on existing successful scans
-    existing_allows = session.exec(
-        select(ScanEvent)
-        .where(ScanEvent.pass_id == p.id, ScanEvent.result == "allow")
-        .order_by(ScanEvent.scanned_at.asc())
-    ).all()
-    if not existing_allows:
-        phase = "out"
-    elif p.returned_at is None:
-        phase = "in"
-    else:
-        # Already has an OUT+IN pair recorded
-        raise HTTPException(status_code=400, detail="Pass already completed")
 
     # Create a one-time token entry
     jti = new_jti()

@@ -8,7 +8,7 @@ from sqlmodel import Session, select
 
 from app.db.session import get_session
 from app.deps import require_role
-from app.models import Pass, ScanEvent, Student, User
+from app.models import Pass, ScanEvent, Student, StudentBehavioralStats, User
 
 router = APIRouter()
 
@@ -51,33 +51,29 @@ def stats(
     active = sum(1 for p in passes if _is_active_pass(p, now))
     approved = sum(1 for p in passes if p.status == "approved")
 
-    # Violation count based on denied scans for this student's passes
-    if total_requests:
-        pass_ids = [p.id for p in passes]
-        scan_events = session.exec(
-            select(ScanEvent).where(ScanEvent.pass_id.in_(pass_ids))
-        ).all()
-        violations = sum(1 for ev in scan_events if ev.result == "deny")
-    else:
-        violations = 0
+    # Read behavioral stats from ML stats table (updated after every IN scan)
+    bstats = session.exec(
+        select(StudentBehavioralStats).where(StudentBehavioralStats.student_id == user.id)
+    ).first()
 
-    # ML-backed risk: aggregate stored risk_score from passes
-    ml_scores = [
-        float(p.risk_score)
-        for p in passes
-        if p.risk_score is not None
-    ]
-    if ml_scores:
-        risk_score = mean(ml_scores)
-    else:
-        risk_score = 0.0
+    violations_30d = int(bstats.violations_30d) if bstats else 0
+    violations_365d = int(bstats.violations_365d) if bstats else 0
+    avg_return_delay = float(bstats.avg_return_delay) if bstats else 0.0
+    requests_7d = int(bstats.requests_last_7days) if bstats else 0
+
+    # Student hostel block
+    student = session.exec(select(Student).where(Student.user_id == user.id)).first()
+    block = (student.hostel_name or "A")[0].upper() if student and student.hostel_name else "A"
 
     return {
         "totalRequests": total_requests,
         "activeRequests": active,
         "approvedRequests": approved,
-        "violations": violations,
-        "riskScore": risk_score,
+        # Real violation counts from behavioral stats table
+        "violations": violations_30d,
+        "violations_30d": violations_30d,
+        "violations_365d": violations_365d,
+        "avg_return_delay": avg_return_delay,
+        "requests_last_7days": requests_7d,
+        "block": block,
     }
-
-

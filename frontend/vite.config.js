@@ -22,7 +22,7 @@ export default defineConfig({
                 manualChunks: {
                     'react-vendor': ['react', 'react-dom', 'react-router-dom'],
                     'chart-vendor': ['recharts'],
-                    'qr-vendor': ['qrcode', 'react-qr-reader'],
+                    'qr-vendor': ['qrcode'],
                     'utils': ['axios', 'lucide-react']
                 }
             }

@@ -82,7 +82,8 @@ class ScanIn(BaseModel):
 class ScanOut(BaseModel):
     result: str  # allow|deny
     reason: Optional[str] = None
-    pass_id: Optional[UUID] = None
+    pass_id: Optional[str] = None
+    message: Optional[str] = None  # human-readable info shown to security guard
 
 
 class LocationIn(BaseModel):

@@ -66,7 +66,11 @@ class Pass(SQLModel, table=True):
     parent_decided_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime()))
     admin_decided_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime()))
 
-    returned_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime()))
+    # Gate scan timestamps — set by scan.py state machine
+    out_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime()))   # actual exit time
+    in_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime()))    # actual return time
+
+    returned_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime()))  # kept for compat
 
     created_at: datetime = Field(default_factory=datetime.utcnow, sa_column=Column(DateTime(), nullable=False))
     updated_at: datetime = Field(default_factory=datetime.utcnow, sa_column=Column(DateTime(), nullable=False))
@@ -119,3 +123,28 @@ class LocationPoint(SQLModel, table=True):
     recorded_at: datetime = Field(default_factory=datetime.utcnow, sa_column=Column(DateTime(), nullable=False, index=True))
 
 
+class Violation(SQLModel, table=True):
+    """Records a policy violation (late return or no-show) per pass."""
+    __tablename__ = "violations"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    student_id: UUID = Field(foreign_key="users.id", index=True)
+    pass_id: UUID = Field(foreign_key="passes.id", index=True)
+    violation_type: str = Field(sa_column=Column(String(30), nullable=False))  # late_return | no_show
+    severity: int = Field(default=1)  # 1=minor, 2=moderate, 3=severe
+    delay_minutes: float = Field(default=0.0)
+    recorded_at: datetime = Field(default_factory=datetime.utcnow, sa_column=Column(DateTime(), nullable=False))
+
+
+class StudentBehavioralStats(SQLModel, table=True):
+    """Cached aggregate behavioral stats per student; updated on every IN-scan."""
+    __tablename__ = "student_behavioral_stats"
+
+    student_id: UUID = Field(foreign_key="users.id", primary_key=True)
+    violations_30d: int = Field(default=0)
+    violations_365d: int = Field(default=0)
+    avg_return_delay: float = Field(default=0.0)
+    no_show_count: int = Field(default=0)
+    avg_parent_response_time: float = Field(default=0.0)
+    requests_last_7days: int = Field(default=0)
+    last_updated: datetime = Field(default_factory=datetime.utcnow, sa_column=Column(DateTime(), nullable=False))

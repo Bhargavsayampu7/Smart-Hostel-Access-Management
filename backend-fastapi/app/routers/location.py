@@ -13,11 +13,12 @@ router = APIRouter()
 
 
 def pass_is_active(p: Pass, now: datetime) -> bool:
-    if p.status != "approved":
+    # Track location when pass is approved (student about to leave) OR out (student outside)
+    if p.status not in ("approved", "out"):
         return False
     if p.returned_at is not None:
         return False
-    return p.to_time.replace(tzinfo=None) > now.replace(tzinfo=None)
+    return True
 
 
 @router.post("", response_model=LocationOut)

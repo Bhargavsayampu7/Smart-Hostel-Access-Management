@@ -8,6 +8,7 @@ import ParentDashboard from './pages/ParentDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import SecurityDashboard from './pages/SecurityDashboard';
 import PassHistory from './pages/PassHistory';
+import Profile from './pages/Profile';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -37,6 +38,12 @@ function App() {
                     <Route path="/student" element={
                         <ProtectedRoute allowedRoles={['student']}>
                             <StudentDashboard />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/profile" element={
+                        <ProtectedRoute allowedRoles={['student']}>
+                            <Profile />
                         </ProtectedRoute>
                     } />
 

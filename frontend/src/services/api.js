@@ -1,11 +1,8 @@
 import axios from 'axios';
 
-// Migrated stack (FastAPI) default:
-// - Development: http://localhost:5002
-// - Production (Vercel): /api (relative path)
-// You can override via Vite env: VITE_API_BASE_URL
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-    (import.meta.env.PROD ? '/api' : 'http://localhost:5002/api');
+// Always use relative /api so requests go through the Vite dev proxy (avoids CORS).
+// In production builds Vite's proxy is absent but the host serves /api directly.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -111,6 +108,8 @@ export const adminAPI = {
     getQueue: () => api.get('/admin/queue'),
     getStudents: () => api.get('/admin/students'),
     getAnalytics: () => api.get('/admin/analytics'),
+    getGateLogs: () => api.get('/admin/gate-logs'),
+    getViolationsList: () => api.get('/admin/violations-list'),
 };
 
 export const violationAPI = {

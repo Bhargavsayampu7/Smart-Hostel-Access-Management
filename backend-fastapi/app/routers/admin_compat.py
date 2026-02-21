@@ -5,22 +5,20 @@ from collections import Counter, defaultdict
 from typing import Dict, List
 
 from fastapi import APIRouter, Depends
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 from app.db.session import get_session
 from app.deps import require_role
-from app.models import Pass, User
+from app.models import Pass, User, Violation, ScanEvent
 from app.routers.requests_compat import _pass_to_request_dict
 
 router = APIRouter()
 
 
 def _is_active(p: Pass, now: datetime) -> bool:
-    if p.status != "approved":
-        return False
-    if p.returned_at is not None:
-        return False
-    return p.to_time.replace(tzinfo=None) > now.replace(tzinfo=None)
+    return p.status in ("approved", "out")
+
 
 
 @router.get("/queue")
@@ -32,7 +30,9 @@ def queue(
     items = []
     for p in passes:
         d = _pass_to_request_dict(p)
-        d["studentName"] = ""
+        # Resolve student name from users table
+        student_user = session.get(User, p.student_id)
+        d["studentName"] = student_user.name if student_user else ""
         d["mlRiskScore"] = d.get("riskScore")
         items.append(d)
     return {"requests": items}
@@ -47,11 +47,16 @@ def overview(
     now = datetime.now(timezone.utc)
     # sqlmodel's exec() returns a Result; materialize to list before counting
     total_students = len(session.exec(select(User).where(User.role == "student")).all())
+    late_returns = session.exec(
+        select(func.count(Violation.id)).where(Violation.violation_type == "late_return")
+    ).one() or 0
+    all_violations = session.exec(select(func.count(Violation.id))).one() or 0
     return {
         "totalStudents": total_students,
         "pendingRequests": sum(1 for p in all_passes if p.status in ("pending_parent", "parent_approved")),
         "activeOutpasses": sum(1 for p in all_passes if _is_active(p, now)),
-        "violations": 0,
+        "violations": all_violations,
+        "lateReturns": late_returns,
     }
 
 
@@ -162,3 +167,54 @@ def analytics(
     }
 
 
+@router.get("/gate-logs")
+def gate_logs(
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(require_role("admin")),
+):
+    """Gate scan events for the Warden Gate Logs tab."""
+    events = session.exec(
+        select(ScanEvent).order_by(ScanEvent.scanned_at.desc()).limit(200)
+    ).all()
+    items = []
+    for e in events:
+        student_name = ""
+        if e.pass_id:
+            p = session.get(Pass, e.pass_id)
+            if p:
+                u = session.get(User, p.student_id)
+                student_name = u.name if u else ""
+        items.append({
+            "id": e.id,
+            "passId": str(e.pass_id) if e.pass_id else None,
+            "studentName": student_name,
+            "gateId": e.gate_id,
+            "result": e.result,
+            "reason": e.reason,
+            "scannedAt": e.scanned_at.replace(tzinfo=timezone.utc).isoformat() if e.scanned_at else None,
+        })
+    return {"gateLogs": items}
+
+
+@router.get("/violations-list")
+def violations_list(
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(require_role("admin")),
+):
+    """Violations list for Warden Violations tab."""
+    viols = session.exec(
+        select(Violation).order_by(Violation.recorded_at.desc()).limit(200)
+    ).all()
+    items = []
+    for v in viols:
+        u = session.get(User, v.student_id)
+        items.append({
+            "id": v.id,
+            "studentName": u.name if u else str(v.student_id),
+            "passId": str(v.pass_id),
+            "violationType": v.violation_type,
+            "severity": v.severity,
+            "delayMinutes": v.delay_minutes,
+            "recordedAt": v.recorded_at.replace(tzinfo=timezone.utc).isoformat() if v.recorded_at else None,
+        })
+    return {"violations": items}

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -12,8 +12,38 @@ from app.models import Pass, Parent, User
 from app.schemas import ApproveIn, PassCreateIn, PassOut
 from app.routers.approvals import parent_decide, admin_decide
 from app.routers.qr import get_qr_for_pass
+from app.services.ml_client import predict_risk
+from app.services.feature_engineering import build_feature_vector
 
 router = APIRouter()
+
+
+IST = timezone(timedelta(hours=5, minutes=30))
+
+
+def _fmt_dt(dt) -> str | None:
+    """Serialize a system datetime (UTC naive, from scan.py / SQLite defaults) to ISO 8601+UTC.
+    Frontend: new Date(iso).toLocaleString() correctly shows local IST time."""
+    if dt is None:
+        return None
+    if isinstance(dt, str):
+        return dt
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.isoformat()
+
+
+def _fmt_local_dt(dt) -> str | None:
+    """Serialize a user-entered local (IST) datetime to ISO 8601+05:30.
+    Used for from_time/to_time which come from the browser datetime-local input
+    and are stored as naive IST strings, NOT UTC."""
+    if dt is None:
+        return None
+    if isinstance(dt, str):
+        return dt
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=IST)
+    return dt.isoformat()
 
 
 def _pass_to_request_dict(p: Pass) -> dict:
@@ -24,22 +54,27 @@ def _pass_to_request_dict(p: Pass) -> dict:
         "type": p.pass_type,
         "destination": p.destination,
         "reason": p.reason,
-        "departureTime": p.from_time,
-        "returnTime": p.to_time,
+        # User-entered planned times (stored as IST naive) → stamp as +05:30
+        "departureTime": _fmt_local_dt(p.from_time),
+        "returnTime": _fmt_local_dt(p.to_time),
         "emergencyContact": p.emergency_contact,
         "status": p.status,
         "riskScore": float(p.risk_score) if p.risk_score is not None else None,
         "riskCategory": p.risk_category,
         "parentComments": p.parent_comments,
         "adminComments": p.admin_comments,
-        "parentApprovedAt": p.parent_decided_at,
-        "adminApprovedAt": p.admin_decided_at,
-        "actualReturnTime": p.returned_at,
-        "updatedAt": p.updated_at,
-        "createdAt": p.created_at,
+        "parentApprovedAt": _fmt_dt(p.parent_decided_at),
+        "adminApprovedAt": _fmt_dt(p.admin_decided_at),
+        # Actual gate-scan timestamps (set by scan.py, stored as UTC naive) → stamp as +00:00
+        "outAt": _fmt_dt(p.out_at),
+        "inAt": _fmt_dt(p.in_at),
+        "actualReturnTime": _fmt_dt(p.in_at or p.returned_at),
+        "updatedAt": _fmt_dt(p.updated_at),
+        "createdAt": _fmt_dt(p.created_at),
         # Old frontend sometimes checks this
-        "parentApproved": p.status == "parent_approved" or p.status == "approved",
+        "parentApproved": p.status in ("parent_approved", "approved", "out", "returned"),
     }
+
 
 
 @router.post("")
@@ -80,6 +115,22 @@ def create_request(
         to_time=mapped.to_time,
         status="pending_parent",
     )
+    session.add(p)
+    session.flush()  # assign p.id without committing yet
+
+    # ── ML Risk Scoring ─────────────────────────────────────────────────────
+    try:
+        features = build_feature_vector(session, user.id, p)
+        ml_result = predict_risk(features)
+        p.risk_score = ml_result.get("risk_score")
+        p.risk_category = ml_result.get("risk_category")
+    except Exception as exc:
+        # ML failure must never block pass creation
+        print(f"[ML] Prediction failed during pass creation: {exc}")
+        p.risk_score = None
+        p.risk_category = None
+    # ────────────────────────────────────────────────────────────────────────
+
     session.add(p)
     session.commit()
     session.refresh(p)
